@@ -3,6 +3,8 @@ import { GAME_CONFIG } from './config/GameConfig';
 import { MenuScene } from './scenes/MenuScene';
 import { LobbyScene } from './scenes/LobbyScene';
 import { GameScene } from './scenes/GameScene';
+import { StageSelectScene } from './scenes/StageSelectScene';
+import { SettingsScene } from './scenes/SettingsScene';
 
 export class PhaserGame {
   private game: Phaser.Game | null = null;
@@ -24,14 +26,20 @@ export class PhaserGame {
     const config: Phaser.Types.Core.GameConfig = {
       ...GAME_CONFIG,
       parent: containerId,
-      scene: [MenuScene, LobbyScene, GameScene],
+      scene: [MenuScene, LobbyScene, GameScene, StageSelectScene, SettingsScene],
       scale: {
-        mode: Phaser.Scale.RESIZE,
+        mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        expandParent: true,
-        fullscreenTarget: containerId
+        width: GAME_CONFIG.width,
+        height: GAME_CONFIG.height,
+        min: {
+          width: 640,
+          height: 360
+        },
+        max: {
+          width: 1920,
+          height: 1080
+        }
       },
       render: {
         antialias: false,

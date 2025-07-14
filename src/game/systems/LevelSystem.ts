@@ -22,30 +22,55 @@ export class LevelSystem {
   }
 
   private determineTheme(): void {
-    // Get selected level from registry or default to grassland
-    const selectedLevel = this.scene.registry.get('selectedLevel') || 'grassland';
+    // Get selected stage from registry or default to grassland
+    const selectedStage = this.scene.registry.get('selectedStage');
     
-    switch (selectedLevel) {
-      case 'cave':
-        this.currentTheme = LEVEL_THEMES.CAVE;
-        break;
-      case 'city':
-        this.currentTheme = LEVEL_THEMES.CITY;
-        break;
-      case 'stringstar':
-        this.currentTheme = LEVEL_THEMES.STRINGSTAR_FIELDS;
-        break;
-      case 'winter':
-        this.currentTheme = LEVEL_THEMES.WINTER;
-        break;
-      case 'desert':
-        this.currentTheme = LEVEL_THEMES.DESERT;
-        break;
-      default:
-        this.currentTheme = LEVEL_THEMES.GRASSLAND;
+    if (selectedStage) {
+      console.log(`🌍 Using selected stage: ${selectedStage.name} (${selectedStage.theme})`);
+      
+             // Use the selected stage's theme
+       switch (selectedStage.theme) {
+         case 'grassland':
+           this.currentTheme = LEVEL_THEMES.GRASSLAND;
+           break;
+         case 'cave':
+           this.currentTheme = LEVEL_THEMES.CAVE;
+           break;
+         case 'city':
+           this.currentTheme = LEVEL_THEMES.CITY;
+           break;
+         case 'stringstar_fields':
+           this.currentTheme = LEVEL_THEMES.STRINGSTAR_FIELDS;
+           break;
+         case 'winter':
+           this.currentTheme = LEVEL_THEMES.WINTER;
+           break;
+         case 'desert':
+           this.currentTheme = LEVEL_THEMES.DESERT;
+           break;
+         case 'autumn':
+           this.currentTheme = LEVEL_THEMES.AUTUMN;
+           break;
+         case 'tropics':
+           this.currentTheme = LEVEL_THEMES.TROPICS;
+           break;
+         case 'space':
+           this.currentTheme = LEVEL_THEMES.SPACE;
+           break;
+         case 'sakura':
+           this.currentTheme = LEVEL_THEMES.SAKURA;
+           break;
+         default:
+           this.currentTheme = LEVEL_THEMES.GRASSLAND;
+       }
+      
+      // Store the selected stage's background for use in background creation
+      this.scene.registry.set('selectedBackground', selectedStage.background);
+    } else {
+      // Fallback to grassland if no stage selected
+      this.currentTheme = LEVEL_THEMES.GRASSLAND;
+      console.log(`🌍 Using default theme: ${this.currentTheme.name}`);
     }
-    
-    console.log(`🌍 Using theme: ${this.currentTheme.name}`);
   }
 
   private createLevel(): void {
@@ -74,6 +99,9 @@ export class LevelSystem {
   private createBackground(): void {
     console.log(`🎨 Creating background for theme: ${this.currentTheme.name}`);
     
+    // Get selected background from stage selection
+    const selectedBackground = this.scene.registry.get('selectedBackground');
+    
     // Create solid background color
     const bgColor = Phaser.Display.Color.HexStringToColor(this.currentTheme.backgroundColor);
     this.scene.add.rectangle(
@@ -83,6 +111,22 @@ export class LevelSystem {
       GAME_CONSTANTS.WORLD_HEIGHT,
       bgColor.color
     );
+    
+    // Add background image if selected from stage selection
+    if (selectedBackground && this.scene.textures.exists(selectedBackground)) {
+      const backgroundImg = this.scene.add.tileSprite(
+        0, 0,
+        GAME_CONSTANTS.WORLD_WIDTH,
+        GAME_CONSTANTS.WORLD_HEIGHT,
+        selectedBackground
+      ).setOrigin(0, 0);
+      
+      backgroundImg.setDepth(-15);
+      backgroundImg.setScrollFactor(0.1, 1);
+      backgroundImg.setAlpha(0.8);
+      
+      console.log(`🌄 Using selected background: ${selectedBackground}`);
+    }
     
     // Add parallax background layers
     this.createParallaxLayers();

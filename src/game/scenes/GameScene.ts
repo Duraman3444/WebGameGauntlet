@@ -62,8 +62,28 @@ export class GameScene extends Phaser.Scene {
   private createLocalPlayer(): void {
     const spawnPoint = this.lastCheckpoint;
     
-    // Create local player with Pink Man as default (player 1)
-    this.localPlayer = new Player(this, spawnPoint.x, spawnPoint.y, 'local', 0);
+    // Get selected character from registry or default to Pink Man
+    const selectedCharacter = this.registry.get('selectedCharacter') || 'pinkman';
+    const gameMode = this.registry.get('gameMode') || 'single';
+    
+    // Map character names to player indexes
+    const characterMap: { [key: string]: number } = {
+      'pinkman': 0,
+      'maskdude': 1,
+      'ninjafrog': 2,
+      'virtualguy': 3,
+      'adventurehero': 4,
+      'robot': 5,
+      'captainclownnose': 6,
+      'kinghuman': 7
+    };
+    
+    this.playerIndex = characterMap[selectedCharacter] || 0;
+    
+    console.log(`🎮 Creating local player with character: ${selectedCharacter} (index: ${this.playerIndex})`);
+    
+    // Create local player with selected character
+    this.localPlayer = new Player(this, spawnPoint.x, spawnPoint.y, 'local', this.playerIndex);
     this.players.set('local', this.localPlayer);
     
     // Set up input events

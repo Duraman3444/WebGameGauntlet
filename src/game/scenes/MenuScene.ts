@@ -7,10 +7,10 @@ export class MenuScene extends Phaser.Scene {
   private characterSprites: Phaser.GameObjects.Sprite[] = [];
   private menuCursor: Phaser.GameObjects.Rectangle | null = null;
   private currentSelection: number = 0;
-  private menuOptions: string[] = ['1 PLAYER GAME', '2 PLAYER GAME', 'CHARACTER SELECT'];
+  private menuOptions: string[] = ['1 PLAYER GAME', '2 PLAYER GAME', 'CHARACTER SELECT', 'STAGE SELECT', 'SETTINGS'];
   private characterPreview: Phaser.GameObjects.Sprite | null = null;
-  private characterNames: string[] = ['PINK MAN', 'MASK DUDE', 'NINJA FROG', 'VIRTUAL GUY'];
-  private characters: string[] = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy'];
+  private characterNames: string[] = ['PINK MAN', 'MASK DUDE', 'NINJA FROG', 'VIRTUAL GUY', 'ADVENTURE HERO', 'ROBOT', 'CAPTAIN CLOWN NOSE', 'KING HUMAN'];
+  private characters: string[] = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
   private currentCharacterIndex: number = 0;
   private gameTitle: Phaser.GameObjects.Text | null = null;
   private menuTexts: Phaser.GameObjects.Text[] = [];
@@ -78,7 +78,11 @@ export class MenuScene extends Phaser.Scene {
       { name: 'Pink Man', key: 'pinkman' },
       { name: 'Mask Dude', key: 'maskdude' },
       { name: 'Ninja Frog', key: 'ninjafrog' },
-      { name: 'Virtual Guy', key: 'virtualguy' }
+      { name: 'Virtual Guy', key: 'virtualguy' },
+      { name: 'Adventure Hero', key: 'adventurehero' },
+      { name: 'Robot', key: 'robot' },
+      { name: 'Captain Clown Nose', key: 'captainclownnose' },
+      { name: 'King Human', key: 'kinghuman' }
     ];
     
     const animations = [
@@ -342,6 +346,12 @@ export class MenuScene extends Phaser.Scene {
         this.showingCharacterSelect = !this.showingCharacterSelect;
         this.updateMenuVisibility();
         break;
+      case 3: // Stage Select
+        this.showStageSelect();
+        break;
+      case 4: // Settings
+        this.showSettings();
+        break;
     }
   }
 
@@ -351,6 +361,24 @@ export class MenuScene extends Phaser.Scene {
         text.setColor(this.showingCharacterSelect ? '#FFFF00' : '#FFFFFF');
       }
     });
+  }
+
+  private showStageSelect(): void {
+    console.log('🎭 Showing stage select screen...');
+    
+    // Store selected character and mode in registry
+    this.registry.set('selectedCharacter', this.selectedCharacter);
+    this.registry.set('gameMode', this.selectedMode);
+    
+    // Transition to stage select scene
+    this.scene.start('StageSelectScene');
+  }
+
+  private showSettings(): void {
+    console.log('⚙️ Showing settings screen...');
+    
+    // Transition to settings scene
+    this.scene.start('SettingsScene');
   }
 
   private startGame(): void {

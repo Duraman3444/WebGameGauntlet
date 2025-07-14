@@ -151,5 +151,3 @@ alwaysApply: true
 - Ensure proper asset loading system before adding more assets
 - Test multiplayer functionality thoroughly before deployment
 - Keep features modular for easy iteration and debugging
-
-Remember: The game should be fully playable with placeholder assets, with real assets enhancing the visual experience but not being required for core functionality. 
