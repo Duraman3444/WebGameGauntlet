@@ -54,42 +54,42 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col">
-      {/* Header */}
-      <header className="bg-gray-800 text-white p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🍎 Fruit Runners</h1>
-          <div className="flex items-center space-x-4">
-            <div className="text-sm">
-              Status: 
-              <span className={`ml-2 px-2 py-1 rounded ${
-                gameStatus === 'ready' ? 'bg-green-600' :
-                gameStatus === 'loading' ? 'bg-yellow-600' :
-                gameStatus === 'error' ? 'bg-red-600' : 'bg-gray-600'
-              }`}>
-                {gameStatus}
-              </span>
+      {/* Header - only show when game hasn't started */}
+      {!gameStarted && (
+        <header className="bg-gray-800 text-white p-4">
+          <div className="container mx-auto flex justify-between items-center">
+            <h1 className="text-2xl font-bold">🍎 Fruit Runners</h1>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm">
+                Status: 
+                <span className={`ml-2 px-2 py-1 rounded ${
+                  gameStatus === 'ready' ? 'bg-green-600' :
+                  gameStatus === 'loading' ? 'bg-yellow-600' :
+                  gameStatus === 'error' ? 'bg-red-600' : 'bg-gray-600'
+                }`}>
+                  {gameStatus}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Game Container */}
-      <main className="flex-1 flex items-center justify-center">
-        <div className="relative">
+      <main className={gameStarted ? "w-full h-screen" : "flex-1 flex items-center justify-center"}>
+        <div className="relative w-full h-full">
           <div 
             id="game-container" 
             ref={gameContainerRef}
-            className="border-4 border-gray-800 rounded-lg shadow-2xl bg-gray-900"
+            className="w-full h-full"
             style={{
-              width: '1024px',
-              height: '576px',
-              maxWidth: '90vw',
-              maxHeight: '70vh'
+              minHeight: '100vh',
+              width: '100vw'
             }}
           >
             {/* Game Status Display */}
             {!gameStarted && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-blue-400 to-blue-600">
                 {gameStatus === 'initializing' && (
                   <div className="text-white text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
@@ -138,7 +138,7 @@ function App() {
             )}
           </div>
           
-          {/* Debug Info Panel */}
+          {/* Debug Info Panel - only show when game hasn't started */}
           {gameStatus === 'ready' && !gameStarted && (
             <div className="absolute top-4 right-4 bg-black bg-opacity-75 text-white p-3 rounded text-xs">
               <div>📊 Debug Info:</div>
@@ -150,17 +150,19 @@ function App() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white p-4">
-        <div className="container mx-auto text-center">
-          <p className="text-sm">
-            🎮 Fruit Runners - Built with React + Phaser 3 + TypeScript
-          </p>
-          <p className="text-xs mt-2 text-gray-400">
-            Drop your itch.io assets in <code>/public/assets/</code>
-          </p>
-        </div>
-      </footer>
+      {/* Footer - only show when game hasn't started */}
+      {!gameStarted && (
+        <footer className="bg-gray-800 text-white p-4">
+          <div className="container mx-auto text-center">
+            <p className="text-sm">
+              🎮 Fruit Runners - Built with React + Phaser 3 + TypeScript
+            </p>
+            <p className="text-xs mt-2 text-gray-400">
+              Drop your itch.io assets in <code>/public/assets/</code>
+            </p>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

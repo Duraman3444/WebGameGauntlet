@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
 
 export const GAME_CONFIG = {
-  // Game dimensions
-  width: 1024,
-  height: 576, // 16:9 aspect ratio for better platformer view
+  // Game dimensions - will be overridden by scale settings
+  width: 1920,
+  height: 1080,
   
   // Physics settings for platformer
   physics: {
@@ -14,10 +14,15 @@ export const GAME_CONFIG = {
     }
   },
   
-  // Rendering settings
+  // Rendering settings optimized for pixel art
   render: {
     antialias: false, // Pixel art style
-    pixelArt: true
+    pixelArt: true,
+    roundPixels: true, // Prevents sub-pixel positioning
+    transparent: false, // Solid background
+    clearBeforeRender: true,
+    preserveDrawingBuffer: false,
+    premultipliedAlpha: false // Prevents transparency issues
   },
   
   // Scene configuration
@@ -26,7 +31,9 @@ export const GAME_CONFIG = {
   // Performance settings
   fps: {
     target: 60,
-    forceSetTimeOut: true
+    forceSetTimeOut: true,
+    deltaHistory: 10,
+    panicMax: 120
   },
   
   // Audio settings
@@ -36,6 +43,11 @@ export const GAME_CONFIG = {
 };
 
 export const GAME_CONSTANTS = {
+  // World dimensions - adjusted for fullscreen
+  WORLD_WIDTH: 4000,
+  WORLD_HEIGHT: 1080,
+  TILE_SIZE: 32,
+  
   // Player settings
   PLAYER_SPEED: 160,
   PLAYER_JUMP_SPEED: 400,
@@ -47,11 +59,6 @@ export const GAME_CONSTANTS = {
   PLAYER_DRAG: 600,
   PLAYER_WALL_DRAG: 300,
   PLAYER_TRAMPOLINE_BOOST: 500, // Extra jump from trampolines
-  
-  // World settings
-  WORLD_WIDTH: 4032, // Perfect for Mario 1-1 level length (flagpole at 3936 + buffer)
-  WORLD_HEIGHT: 576,
-  TILE_SIZE: 32,
   
   // Game settings
   MAX_PLAYERS: 4,

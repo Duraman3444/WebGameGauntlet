@@ -20,32 +20,49 @@ export class PhaserGame {
       return;
     }
 
-    // Configure Phaser game
+    // Configure Phaser game with improved settings
     const config: Phaser.Types.Core.GameConfig = {
       ...GAME_CONFIG,
       parent: containerId,
       scene: [MenuScene, LobbyScene, GameScene],
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: GAME_CONFIG.width,
-        height: GAME_CONFIG.height,
-        min: {
-          width: 800,
-          height: 450
-        },
-        max: {
-          width: 1600,
-          height: 900
-        }
+        width: window.innerWidth,
+        height: window.innerHeight,
+        expandParent: true,
+        fullscreenTarget: containerId
       },
-      backgroundColor: '#87CEEB'
+      render: {
+        antialias: false,
+        pixelArt: true,
+        roundPixels: true,
+        transparent: false,
+        clearBeforeRender: true,
+        preserveDrawingBuffer: false,
+        premultipliedAlpha: false,
+        failIfMajorPerformanceCaveat: false
+      },
+      backgroundColor: '#87CEEB',
+      fps: {
+        target: 60,
+        forceSetTimeOut: true,
+        deltaHistory: 10,
+        panicMax: 120
+      }
     };
 
     this.game = new Phaser.Game(config);
     
     // Set up game event listeners
     this.setupGameEventListeners();
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      if (this.game) {
+        this.game.scale.resize(window.innerWidth, window.innerHeight);
+      }
+    });
   }
 
   private setupGameEventListeners(): void {
