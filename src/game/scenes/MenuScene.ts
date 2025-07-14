@@ -7,7 +7,7 @@ export class MenuScene extends Phaser.Scene {
   private characterSprites: Phaser.GameObjects.Sprite[] = [];
   private menuCursor: Phaser.GameObjects.Rectangle | null = null;
   private currentSelection: number = 0;
-  private menuOptions: string[] = ['1 PLAYER GAME', '2 PLAYER GAME', 'CHARACTER SELECT', 'STAGE SELECT', 'SETTINGS'];
+  private menuOptions: string[] = ['1 PLAYER GAME', '2 PLAYER GAME', 'CHARACTER SELECT', 'STAGE SELECT', 'STAGE EDITOR', 'SETTINGS'];
   private characterPreview: Phaser.GameObjects.Sprite | null = null;
   private characterNames: string[] = ['PINK MAN', 'MASK DUDE', 'NINJA FROG', 'VIRTUAL GUY', 'ADVENTURE HERO', 'ROBOT', 'CAPTAIN CLOWN NOSE', 'KING HUMAN'];
   private characters: string[] = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
@@ -352,7 +352,10 @@ export class MenuScene extends Phaser.Scene {
       case 3: // Stage Select
         this.showStageSelect();
         break;
-      case 4: // Settings
+      case 4: // Stage Editor
+        this.showStageEditor();
+        break;
+      case 5: // Settings
         this.showSettings();
         break;
     }
@@ -375,6 +378,16 @@ export class MenuScene extends Phaser.Scene {
     
     // Transition to stage select scene
     this.scene.start('StageSelectScene');
+  }
+
+  private showStageEditor(): void {
+    console.log('🛠️  Opening Stage Editor...');
+
+    // Store current selections in registry if needed
+    this.registry.set('selectedCharacter', this.selectedCharacter);
+    this.registry.set('gameMode', this.selectedMode);
+
+    this.scene.start('StageEditorScene');
   }
 
   private showSettings(): void {

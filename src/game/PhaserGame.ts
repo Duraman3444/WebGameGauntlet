@@ -5,6 +5,7 @@ import { LobbyScene } from './scenes/LobbyScene';
 import { GameScene } from './scenes/GameScene';
 import { StageSelectScene } from './scenes/StageSelectScene';
 import { SettingsScene } from './scenes/SettingsScene';
+import { StageEditorScene } from './scenes/StageEditorScene';
 
 export class PhaserGame {
   private game: Phaser.Game | null = null;
@@ -26,7 +27,7 @@ export class PhaserGame {
     const config: Phaser.Types.Core.GameConfig = {
       ...GAME_CONFIG,
       parent: containerId,
-      scene: [MenuScene, LobbyScene, GameScene, StageSelectScene, SettingsScene],
+      scene: [MenuScene, LobbyScene, GameScene, StageSelectScene, StageEditorScene, SettingsScene],
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
