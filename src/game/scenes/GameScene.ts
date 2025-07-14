@@ -32,6 +32,11 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     console.log('🎮 GameScene: Starting asset preload...');
+    console.log('🎮 GameScene: Base URL:', this.load.baseURL);
+    console.log('🎮 GameScene: Path:', this.load.path);
+    
+    // Set up loading event handlers first
+    this.setupLoadEventHandlers();
     
     // Load character assets (ensuring they're available in GameScene)
     this.loadCharacterAssets();
@@ -45,8 +50,7 @@ export class GameScene extends Phaser.Scene {
     // Load background assets
     this.loadBackgroundAssets();
     
-    // Set up loading event handlers
-    this.setupLoadEventHandlers();
+    console.log('🎮 GameScene: All asset loads queued, starting load...');
   }
 
   private loadCharacterAssets(): void {
@@ -76,6 +80,7 @@ export class GameScene extends Phaser.Scene {
         const assetKey = `${character.key}_${animation.key}`;
         
         this.load.image(assetKey, encodedPath);
+        console.log(`👤 Loading character: ${assetKey} from ${encodedPath}`);
       });
     });
   }
@@ -98,6 +103,7 @@ export class GameScene extends Phaser.Scene {
       const rawPath = `assets/sprites/Items/Fruits/${fruit.name}.png`;
       const encodedPath = encodeURI(rawPath);
       this.load.image(fruit.key, encodedPath);
+      console.log(`🍎 Loading fruit: ${fruit.key} from ${encodedPath}`);
     });
   }
 
@@ -159,12 +165,42 @@ export class GameScene extends Phaser.Scene {
   private setupLoadEventHandlers(): void {
     this.load.on('complete', () => {
       console.log('🎯 GameScene: Asset loading complete!');
+      this.verifyAssetsLoaded();
     });
 
     this.load.on('loaderror', (file: any) => {
-      console.warn(`❌ GameScene: Failed to load asset: ${file.key}`);
+      console.error(`❌ GameScene: Failed to load asset: ${file.key} from ${file.url}`);
       // Create placeholder for failed assets
       this.createAssetPlaceholder(file.key);
+    });
+    
+    this.load.on('filecomplete', (key: string, type: string, data: any) => {
+      console.log(`✅ GameScene: Successfully loaded ${type}: ${key}`);
+    });
+  }
+
+  private verifyAssetsLoaded(): void {
+    console.log('🔍 GameScene: Verifying assets loaded...');
+    
+    // Check fruits
+    const fruits = ['apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'];
+    fruits.forEach(fruit => {
+      if (this.textures.exists(fruit)) {
+        console.log(`✅ Fruit texture exists: ${fruit}`);
+      } else {
+        console.warn(`❌ Fruit texture missing: ${fruit}`);
+      }
+    });
+    
+    // Check characters
+    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
+    characters.forEach(character => {
+      const idleKey = `${character}_idle`;
+      if (this.textures.exists(idleKey)) {
+        console.log(`✅ Character texture exists: ${idleKey}`);
+      } else {
+        console.warn(`❌ Character texture missing: ${idleKey}`);
+      }
     });
   }
 
