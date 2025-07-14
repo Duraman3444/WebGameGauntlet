@@ -560,27 +560,50 @@ export class LevelSystem {
     const graphics = this.scene.add.graphics();
     
     // Choose color based on platform type
-    let fillColor: number;
+    let baseColor: number;
+    let highlightColor: number;
+    let shadowColor: number;
+    
     if (type === 'ground') {
-      fillColor = 0x8B4513; // Brown for ground
+      baseColor = 0x8B4513;    // Brown for ground
+      highlightColor = 0xCD853F; // Sandy brown highlight
+      shadowColor = 0x654321;   // Dark brown shadow
     } else if (type === 'platform') {
-      fillColor = 0x654321; // Darker brown for platforms
+      baseColor = 0x654321;    // Darker brown for platforms
+      highlightColor = 0x8B4513; // Brown highlight
+      shadowColor = 0x4A4A4A;   // Dark gray shadow
     } else if (type === 'falling_platform') {
-      fillColor = 0xD2691E; // Orange-brown for falling platforms
+      baseColor = 0xD2691E;    // Orange-brown for falling platforms
+      highlightColor = 0xF4A460; // Sandy brown highlight
+      shadowColor = 0xA0522D;   // Sienna shadow
     } else {
-      fillColor = 0x696969; // Gray for other types
+      baseColor = 0x696969;    // Gray for other types
+      highlightColor = 0x808080; // Light gray highlight
+      shadowColor = 0x2F2F2F;   // Dark gray shadow
     }
     
-    // Create the platform rectangle
-    graphics.fillStyle(fillColor);
+    // Create the base platform rectangle
+    graphics.fillStyle(baseColor);
     graphics.fillRect(0, 0, width, height);
     
-    // Add some texture/pattern
-    graphics.fillStyle(0x000000, 0.2); // Semi-transparent black for texture
-    for (let i = 0; i < width; i += 8) {
-      for (let j = 0; j < height; j += 8) {
-        if ((i + j) % 16 === 0) {
-          graphics.fillRect(i, j, 4, 4);
+    // Add highlight on top and left edges (3D effect)
+    graphics.fillStyle(highlightColor);
+    graphics.fillRect(0, 0, width, 2);        // Top highlight
+    graphics.fillRect(0, 0, 2, height);       // Left highlight
+    
+    // Add shadow on bottom and right edges (3D effect)
+    graphics.fillStyle(shadowColor);
+    graphics.fillRect(0, height - 2, width, 2);    // Bottom shadow
+    graphics.fillRect(width - 2, 0, 2, height);    // Right shadow
+    
+    // Add some subtle texture pattern
+    graphics.fillStyle(shadowColor, 0.3); // Semi-transparent for subtle texture
+    const tileSize = 16;
+    for (let x = 0; x < width; x += tileSize) {
+      for (let y = 0; y < height; y += tileSize) {
+        // Create a subtle brick-like pattern
+        if ((x / tileSize + y / tileSize) % 2 === 0) {
+          graphics.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
         }
       }
     }
@@ -677,11 +700,12 @@ export class LevelSystem {
   }
 
   private createFruit(x: number, y: number, type: string): Phaser.Physics.Arcade.Sprite {
-    console.log(`�� Creating fruit: ${type} at (${x}, ${y})`);
+    console.log(`🍎 Creating fruit: ${type} at (${x}, ${y})`);
     
-    // Check if fruit texture exists
+    // Check if fruit texture exists, if not create a better fallback
     if (!this.scene.textures.exists(type)) {
-      console.warn(`❌ Fruit texture ${type} not found`);
+      console.warn(`❌ Fruit texture ${type} not found, creating fallback`);
+      this.createFruitFallback(type);
     }
     
     const fruit = this.fruits.create(x, y, type) as Phaser.Physics.Arcade.Sprite;
@@ -705,6 +729,107 @@ export class LevelSystem {
 
     console.log(`✅ Fruit created successfully: ${type}`);
     return fruit;
+  }
+
+  private createFruitFallback(type: string): void {
+    const graphics = this.scene.add.graphics();
+    const size = 24;
+    
+    // Choose colors based on fruit type
+    let baseColor: number;
+    let highlightColor: number;
+    let shadowColor: number;
+    
+    switch (type) {
+      case 'apple':
+        baseColor = 0xFF0000;      // Red
+        highlightColor = 0xFF6B6B; // Light red
+        shadowColor = 0xCC0000;    // Dark red
+        break;
+      case 'bananas':
+        baseColor = 0xFFFF00;      // Yellow
+        highlightColor = 0xFFFF99; // Light yellow
+        shadowColor = 0xCCCC00;    // Dark yellow
+        break;
+      case 'cherries':
+        baseColor = 0x8B0000;      // Dark red
+        highlightColor = 0xFF1493; // Deep pink
+        shadowColor = 0x660000;    // Very dark red
+        break;
+      case 'orange':
+        baseColor = 0xFF8C00;      // Dark orange
+        highlightColor = 0xFFB347; // Light orange
+        shadowColor = 0xCC7000;    // Dark orange
+        break;
+      case 'strawberry':
+        baseColor = 0xFF1493;      // Deep pink
+        highlightColor = 0xFF69B4; // Hot pink
+        shadowColor = 0xC71585;    // Medium violet red
+        break;
+      case 'kiwi':
+        baseColor = 0x32CD32;      // Lime green
+        highlightColor = 0x98FB98; // Pale green
+        shadowColor = 0x228B22;    // Forest green
+        break;
+      case 'melon':
+        baseColor = 0x90EE90;      // Light green
+        highlightColor = 0xF0FFF0; // Honeydew
+        shadowColor = 0x006400;    // Dark green
+        break;
+      case 'pineapple':
+        baseColor = 0xFFD700;      // Gold
+        highlightColor = 0xFFFF00; // Yellow
+        shadowColor = 0xB8860B;    // Dark goldenrod
+        break;
+      default:
+        baseColor = 0xFF69B4;      // Hot pink
+        highlightColor = 0xFFB6C1; // Light pink
+        shadowColor = 0xC71585;    // Medium violet red
+    }
+    
+    // Create fruit body (circle)
+    graphics.fillStyle(baseColor);
+    graphics.fillCircle(size / 2, size / 2, size / 2 - 2);
+    
+    // Add highlight (smaller circle at top-left)
+    graphics.fillStyle(highlightColor);
+    graphics.fillCircle(size * 0.35, size * 0.35, size * 0.15);
+    
+    // Add shadow (smaller circle at bottom-right)
+    graphics.fillStyle(shadowColor);
+    graphics.fillCircle(size * 0.65, size * 0.65, size * 0.1);
+    
+    // Add fruit-specific details
+    if (type === 'apple') {
+      // Add stem
+      graphics.fillStyle(0x8B4513); // Brown
+      graphics.fillRect(size * 0.48, 2, 2, 6);
+      // Add leaf
+      graphics.fillStyle(0x228B22); // Forest green
+      graphics.fillEllipse(size * 0.6, 4, 4, 2);
+    } else if (type === 'cherries') {
+      // Add second cherry
+      graphics.fillStyle(baseColor);
+      graphics.fillCircle(size * 0.7, size * 0.7, size * 0.3);
+      graphics.fillStyle(highlightColor);
+      graphics.fillCircle(size * 0.65, size * 0.65, size * 0.1);
+    } else if (type === 'pineapple') {
+      // Add crown
+      graphics.fillStyle(0x228B22); // Forest green
+      for (let i = 0; i < 5; i++) {
+        graphics.fillTriangle(
+          size * 0.2 + i * 3, 2,
+          size * 0.15 + i * 3, 8,
+          size * 0.25 + i * 3, 8
+        );
+      }
+    }
+    
+    // Generate texture
+    graphics.generateTexture(type, size, size);
+    graphics.destroy();
+    
+    console.log(`🍎 Created fallback texture for fruit: ${type}`);
   }
 
   private createEnemies(): void {

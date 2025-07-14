@@ -190,10 +190,111 @@ export class Player {
   }
 
   private updatePlayerGraphics(): void {
+    // Get the current texture key
+    const textureKey = this.sprite.texture.key;
+    
     // Ensure the sprite displays at correct size without color tinting
     this.sprite.clearTint();
     this.sprite.setDisplaySize(GAME_CONSTANTS.PLAYER_SIZE, GAME_CONSTANTS.PLAYER_SIZE);
-    console.log(`👤 Updated graphics for ${this.character}, texture: ${this.sprite.texture.key}`);
+    
+    // If using a placeholder texture, improve it
+    if (textureKey.includes('placeholder') || !this.scene.textures.exists(textureKey)) {
+      this.createBetterCharacterPlaceholder();
+    }
+    
+    console.log(`👤 Updated graphics for ${this.character}, texture: ${textureKey}`);
+  }
+
+  private createBetterCharacterPlaceholder(): void {
+    const graphics = this.scene.add.graphics();
+    const size = GAME_CONSTANTS.PLAYER_SIZE;
+    
+    // Choose color based on character type
+    let baseColor: number;
+    let highlightColor: number;
+    let shadowColor: number;
+    
+    switch (this.character) {
+      case 'pinkman':
+        baseColor = 0xFF69B4;    // Pink
+        highlightColor = 0xFFB6C1; // Light pink
+        shadowColor = 0xC71585;   // Medium violet red
+        break;
+      case 'maskdude':
+        baseColor = 0x4169E1;    // Royal blue
+        highlightColor = 0x87CEEB; // Sky blue
+        shadowColor = 0x191970;   // Midnight blue
+        break;
+      case 'ninjafrog':
+        baseColor = 0x32CD32;    // Lime green
+        highlightColor = 0x98FB98; // Pale green
+        shadowColor = 0x228B22;   // Forest green
+        break;
+      case 'virtualguy':
+        baseColor = 0xFF4500;    // Orange red
+        highlightColor = 0xFFA500; // Orange
+        shadowColor = 0xB22222;   // Fire brick
+        break;
+      case 'adventurehero':
+        baseColor = 0x8B4513;    // Saddle brown
+        highlightColor = 0xD2691E; // Chocolate
+        shadowColor = 0x654321;   // Dark brown
+        break;
+      case 'robot':
+        baseColor = 0x708090;    // Slate gray
+        highlightColor = 0xC0C0C0; // Silver
+        shadowColor = 0x2F4F4F;   // Dark slate gray
+        break;
+      case 'kinghuman':
+        baseColor = 0xFFD700;    // Gold
+        highlightColor = 0xFFFF00; // Yellow
+        shadowColor = 0xB8860B;   // Dark goldenrod
+        break;
+      default:
+        baseColor = 0xFF69B4;    // Default pink
+        highlightColor = 0xFFB6C1;
+        shadowColor = 0xC71585;
+    }
+    
+    // Create character body with rounded corners
+    graphics.fillStyle(baseColor);
+    graphics.fillRoundedRect(4, 8, size - 8, size - 12, 4);
+    
+    // Add highlight on top for 3D effect
+    graphics.fillStyle(highlightColor);
+    graphics.fillRoundedRect(4, 8, size - 8, 4, 2);
+    
+    // Add shadow on bottom for 3D effect
+    graphics.fillStyle(shadowColor);
+    graphics.fillRoundedRect(4, size - 8, size - 8, 4, 2);
+    
+    // Add simple face
+    graphics.fillStyle(0x000000);
+    graphics.fillCircle(size * 0.35, size * 0.4, 2);  // Left eye
+    graphics.fillCircle(size * 0.65, size * 0.4, 2);  // Right eye
+    graphics.fillRoundedRect(size * 0.4, size * 0.55, size * 0.2, 2, 1); // Mouth
+    
+    // Add character-specific details
+    if (this.character === 'robot') {
+      // Add antenna
+      graphics.fillStyle(shadowColor);
+      graphics.fillRect(size * 0.48, 4, 2, 6);
+      graphics.fillCircle(size * 0.5, 4, 2);
+    } else if (this.character === 'kinghuman') {
+      // Add crown
+      graphics.fillStyle(0xFFD700);
+      graphics.fillTriangle(size * 0.3, 8, size * 0.5, 2, size * 0.7, 8);
+    }
+    
+    // Generate texture
+    const placeholderKey = `${this.character}_better_placeholder`;
+    graphics.generateTexture(placeholderKey, size, size);
+    graphics.destroy();
+    
+    this.sprite.setTexture(placeholderKey);
+    this.sprite.setDisplaySize(size, size);
+    
+    console.log(`👤 Created better placeholder for ${this.character}`);
   }
 
   private setupInput(): void {

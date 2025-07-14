@@ -463,14 +463,6 @@ export const LEVEL_DATA = {
   
   // Trap obstacles (replacing classic Mario enemies)
   traps: [
-    // Starting area - first Goomba positions
-    { x: 704, y: 656, type: 'spike', subtype: 'ground' },             // First enemy position
-    { x: 832, y: 656, type: 'spike', subtype: 'ground' },             // Second Goomba position
-    
-    // Pit areas with spikes
-    { x: 864, y: 656, type: 'spike', subtype: 'ground' },             // Gap hazard
-    { x: 1120, y: 656, type: 'spike', subtype: 'ground' },            // Another gap hazard
-    
     // Fire traps replacing some enemies
     { x: 960, y: 624, type: 'fire', cycle: 3000 },                    // Mid-level fire trap
     { x: 1440, y: 624, type: 'fire', cycle: 3000 },                   // Before pipe area
@@ -488,14 +480,6 @@ export const LEVEL_DATA = {
     { x: 1500, y: 444, type: 'saw', movement: 'vertical', range: 80 },     // Vertical patrol
     { x: 1900, y: 544, type: 'saw', movement: 'horizontal', range: 120 },  // Pipe area patrol
     { x: 2600, y: 544, type: 'saw', movement: 'horizontal', range: 100 },  // Pre-stairs area
-    
-    // Additional ground spikes
-    { x: 1312, y: 656, type: 'spike', subtype: 'ground' },
-    { x: 1520, y: 656, type: 'spike', subtype: 'ground' },
-    { x: 1728, y: 656, type: 'spike', subtype: 'ground' },
-    { x: 2080, y: 656, type: 'spike', subtype: 'ground' },
-    { x: 2368, y: 656, type: 'spike', subtype: 'ground' },
-    { x: 2592, y: 656, type: 'spike', subtype: 'ground' },
     
     // Falling platforms for added challenge
     { x: 1600, y: 544, type: 'falling_platform' },
