@@ -554,6 +554,45 @@ export class LevelSystem {
     });
   }
 
+  private createPlatformTexture(type: string, width: number, height: number): string {
+    // For now, use simple generated textures
+    // Later, you can modify this to use actual tile sprites
+    const graphics = this.scene.add.graphics();
+    
+    // Choose color based on platform type
+    let fillColor: number;
+    if (type === 'ground') {
+      fillColor = 0x8B4513; // Brown for ground
+    } else if (type === 'platform') {
+      fillColor = 0x654321; // Darker brown for platforms
+    } else if (type === 'falling_platform') {
+      fillColor = 0xD2691E; // Orange-brown for falling platforms
+    } else {
+      fillColor = 0x696969; // Gray for other types
+    }
+    
+    // Create the platform rectangle
+    graphics.fillStyle(fillColor);
+    graphics.fillRect(0, 0, width, height);
+    
+    // Add some texture/pattern
+    graphics.fillStyle(0x000000, 0.2); // Semi-transparent black for texture
+    for (let i = 0; i < width; i += 8) {
+      for (let j = 0; j < height; j += 8) {
+        if ((i + j) % 16 === 0) {
+          graphics.fillRect(i, j, 4, 4);
+        }
+      }
+    }
+    
+    // Generate texture from graphics
+    const textureKey = `platform_${type}_${width}x${height}`;
+    graphics.generateTexture(textureKey, width, height);
+    graphics.destroy();
+    
+    return textureKey;
+  }
+
   private createPlatform(
     x: number,
     y: number,
@@ -571,46 +610,30 @@ export class LevelSystem {
     // Use static bodies so they never respond to gravity or impulses
     const targetGroup = type === 'wall' ? this.walls : this.platforms;
 
-    // Use themed tileset for platforms
-    const tilesetMapping: { [key: string]: string } = {
-      'grassland_tileset': 'grassland_tileset',
-      'autumn_tileset': 'autumn_tileset', 
-      'tropics_tileset': 'tropics_tileset',
-      'winter_tileset': 'winter_tileset',
-      'cave_tileset': 'grassland_tileset', // Use grassland for cave
-      'city_tileset': 'grassland_tileset', // Use grassland for city
-      'desert_tileset': 'grassland_tileset', // Use grassland for desert
-      'space_tileset': 'grassland_tileset', // Use grassland for space
-      'sakura_tileset': 'grassland_tileset' // Use grassland for sakura
-    };
+    // Create texture for the platform
+    const textureKey = this.createPlatformTexture(type, width, height);
     
-    const actualTilesetKey = tilesetMapping[this.currentTheme.tilesetKey] || 'grassland_tileset';
-    const tilesetKey = this.scene.textures.exists(actualTilesetKey) ? actualTilesetKey : 'terrain_tileset';
-
-    if (!this.scene.textures.exists(tilesetKey)) {
-      console.warn(`❌ Platform texture ${tilesetKey} not found for platform creation`);
-    }
-
-    // ------------------------------------------------------------------
-    // NEW IMPLEMENTATION: create a TileSprite so we repeat the tile texture
-    // across the requested platform area instead of stretching the entire
-    // tileset. This removes the "half-full" tile artefacts and jagged edges.
-    // ------------------------------------------------------------------
-    const tileSprite = this.scene.add.tileSprite(
+    // Create sprite using the generated texture
+    const platformSprite = this.scene.add.sprite(
       x + width / 2,
       y + height / 2,
-      width,
-      height,
-      tilesetKey,
-      0 // use the first frame of the tileset
+      textureKey
     ).setOrigin(0.5);
+    
+    // Make sure the sprite is visible
+    platformSprite.setVisible(true);
+    platformSprite.setDepth(0); // Ensure it's above background but below players
+    platformSprite.setAlpha(1); // Ensure it's fully opaque
+    
+    console.log(`🎨 Platform sprite created: ${width}x${height} at (${x + width / 2}, ${y + height / 2}) using texture: ${textureKey}`);
+    console.log(`🎨 Platform sprite visible: ${platformSprite.visible}, alpha: ${platformSprite.alpha}, depth: ${platformSprite.depth}`);
 
     // Convert to a static physics body
-    this.scene.physics.add.existing(tileSprite, true);
-    targetGroup.add(tileSprite as unknown as Phaser.GameObjects.GameObject & { body: Phaser.Physics.Arcade.Body });
+    this.scene.physics.add.existing(platformSprite, true);
+    targetGroup.add(platformSprite as unknown as Phaser.GameObjects.GameObject & { body: Phaser.Physics.Arcade.Body });
 
-    console.log(`✅ Platform created successfully: ${type}`);
-    return tileSprite as unknown as Phaser.Physics.Arcade.Sprite;
+    console.log(`✅ Platform created successfully: ${type} with texture: ${textureKey}`);
+    return platformSprite as unknown as Phaser.Physics.Arcade.Sprite;
   }
 
   private createBoxes(): void {

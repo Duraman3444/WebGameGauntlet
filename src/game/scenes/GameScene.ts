@@ -221,19 +221,39 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupLoadEventHandlers(): void {
-    this.load.on('complete', () => {
-      console.log('🎯 GameScene: Asset loading complete!');
-      this.verifyAssetsLoaded();
-    });
-
-    this.load.on('loaderror', (file: any) => {
-      console.error(`❌ GameScene: Failed to load asset: ${file.key} from ${file.url}`);
-      // Create placeholder for failed assets
-      this.createAssetPlaceholder(file.key);
+    this.load.on('filecomplete', (key: string, type: string, data: any) => {
+      if (key.includes('tileset') || key.includes('terrain')) {
+        console.log(`✅ Tileset loaded: ${key} (${type})`);
+        
+        // Check if it's a spritesheet and log frame info
+        if (this.textures.exists(key)) {
+          const texture = this.textures.get(key);
+          const frame = texture.get(0);
+          if (frame) {
+            console.log(`📐 Tileset ${key} frame 0: ${frame.width}x${frame.height}`);
+          }
+        }
+      }
     });
     
-    this.load.on('filecomplete', (key: string, type: string, data: any) => {
-      console.log(`✅ GameScene: Successfully loaded ${type}: ${key}`);
+    this.load.on('loaderror', (file: any) => {
+      console.error(`❌ Failed to load: ${file.key} from ${file.url}`);
+    });
+    
+    this.load.on('complete', () => {
+      console.log('📦 All assets loaded successfully');
+      
+      // Verify tileset textures are available
+      const tilesets = ['grassland_tileset', 'autumn_tileset', 'tropics_tileset', 'winter_tileset', 'terrain_tileset'];
+      tilesets.forEach(tileset => {
+        if (this.textures.exists(tileset)) {
+          console.log(`✅ Tileset verified: ${tileset}`);
+        } else {
+          console.warn(`❌ Tileset missing: ${tileset}`);
+        }
+      });
+      
+      this.verifyAssetsLoaded();
     });
   }
 
@@ -296,23 +316,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Get game store instance
+    console.log('🎮 GameScene: Creating game scene...');
+    
+    // Initialize game store
     this.gameStore = useGameStore.getState();
     
-    // Create level system
+    // Create level system (this will create the level layout)
     this.levelSystem = new LevelSystem(this);
     
     // Create local player
     this.createLocalPlayer();
     
-    // Set up collision detection
-    this.setupCollisions();
+    // Set up camera
+    this.setupCamera();
     
     // Create UI
     this.createUI();
     
-    // Set up camera
-    this.setupCamera();
+    // Set up collision detection
+    this.setupCollisions();
     
     // Start game timer
     this.startGameTimer();
@@ -322,6 +344,8 @@ export class GameScene extends Phaser.Scene {
     
     // Set up event listeners
     this.setupEventListeners();
+    
+    console.log('🎮 GameScene: Scene creation complete');
   }
 
   private createLocalPlayer(): void {
