@@ -8,7 +8,14 @@ interface PlacedObject {
 }
 
 export class StageEditorScene extends Phaser.Scene {
-  private assetKeys: string[] = ['spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb'];
+  private assetKeys: string[] = [
+    // Traps / terrain
+    'spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb',
+    // Boxes
+    'box1', 'box2', 'box3',
+    // Enemies (generated icons)
+    'enemy_goomba', 'enemy_koopa', 'enemy_piranha'
+  ];
   private currentAssetIndex: number = 0;
   private placedObjects: PlacedObject[] = [];
   private placedSprites: Phaser.GameObjects.Sprite[] = [];
@@ -21,17 +28,66 @@ export class StageEditorScene extends Phaser.Scene {
 
   preload(): void {
     // Load any assets that might not already be present. If already loaded, this is a no-op.
-    const assetDefs: { key: string; path: string }[] = [
+    const assetDefs: { key: string; path?: string; generate?: () => void }[] = [
       { key: 'spike_idle', path: 'assets/sprites/Traps/Spikes/Idle.png' },
       { key: 'trampoline_idle', path: 'assets/sprites/Traps/Trampoline/Idle.png' },
       { key: 'fire_off', path: 'assets/sprites/Traps/Fire/Off.png' },
       { key: 'saw_on', path: 'assets/sprites/Traps/Saw/On (38x38).png' },
       { key: 'bomb', path: 'assets/sprites/sprites/09-Bomb/Bomb On (52x56).png' },
+      // Boxes
+      { key: 'box1', path: 'assets/sprites/Items/Boxes/Box1/Idle.png' },
+      { key: 'box2', path: 'assets/sprites/Items/Boxes/Box2/Idle.png' },
+      { key: 'box3', path: 'assets/sprites/Items/Boxes/Box3/Idle.png' },
+      // Enemy icons generated via graphics
+      {
+        key: 'enemy_goomba',
+        generate: () => {
+          const g = this.add.graphics();
+          const s = 16;
+          g.fillStyle(0x8B4513).fillRect(0, s * 0.4, s, s * 0.6);
+          g.fillStyle(0xA0522D).fillCircle(s / 2, s * 0.3, s * 0.3);
+          g.fillStyle(0x000000);
+          g.fillCircle(s * 0.35, s * 0.25, 2);
+          g.fillCircle(s * 0.65, s * 0.25, 2);
+          g.generateTexture('enemy_goomba', s, s);
+          g.destroy();
+        }
+      },
+      {
+        key: 'enemy_koopa',
+        generate: () => {
+          const g = this.add.graphics();
+          const s = 16;
+          g.fillStyle(0x32CD32).fillRect(s * 0.1, s * 0.3, s * 0.8, s * 0.7);
+          g.fillStyle(0xFFFF00).fillCircle(s / 2, s * 0.2, s * 0.15);
+          g.fillStyle(0x000000).fillCircle(s * 0.45, s * 0.18, 1.5);
+          g.fillCircle(s * 0.55, s * 0.18, 1.5);
+          g.generateTexture('enemy_koopa', s, s);
+          g.destroy();
+        }
+      },
+      {
+        key: 'enemy_piranha',
+        generate: () => {
+          const g = this.add.graphics();
+          const s = 16;
+          g.fillStyle(0x32CD32).fillRect(s * 0.2, s * 0.5, s * 0.6, s * 0.5);
+          g.fillStyle(0xFF0000).fillCircle(s / 2, s * 0.3, s * 0.25);
+          g.fillStyle(0x000000).fillRect(s * 0.35, s * 0.3, s * 0.3, s * 0.05);
+          g.generateTexture('enemy_piranha', s, s);
+          g.destroy();
+        }
+      }
     ];
 
     assetDefs.forEach(def => {
-      if (!this.textures.exists(def.key)) {
-        this.load.image(def.key, encodeURI(def.path));
+      if (def.path) {
+        if (!this.textures.exists(def.key)) {
+          this.load.image(def.key, encodeURI(def.path));
+        }
+      } else if (def.generate) {
+        // Generate after load completes
+        this.textures.exists(def.key) || def.generate();
       }
     });
   }
