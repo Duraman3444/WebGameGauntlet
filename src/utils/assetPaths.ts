@@ -30,14 +30,14 @@ export const AssetPaths = {
   trap: (folder: string, file: string) => `${ASSET_ROOTS.TRAPS}/${folder}/${file}`,
   spike: () => `${ASSET_ROOTS.TRAPS}/Spikes/Idle.png`,
   trampoline: () => `${ASSET_ROOTS.TRAPS}/Trampoline/Idle.png`,
-  fire: (state: string) => `${ASSET_ROOTS.TRAPS}/Fire/${state === 'on' ? 'on' : 'off'}.png`,
-  saw: () => `${ASSET_ROOTS.TRAPS}/Saw/On.png`,
-  fallingPlatform: () => `${ASSET_ROOTS.TRAPS}/Falling Platforms/On.png`,
+  fire: (state: string) => `${ASSET_ROOTS.TRAPS}/Fire/${state === 'on' ? 'On (16x32).png' : 'Off.png'}`,
+  saw: () => `${ASSET_ROOTS.TRAPS}/Saw/On (38x38).png`,
+  fallingPlatform: () => `${ASSET_ROOTS.TRAPS}/Falling Platforms/On (32x10).png`,
   
-  // Items
-  fruit: (name: string) => `${ASSET_ROOTS.SPRITES}/Items/Fruits/${name}.png`,
-  box: (name: string) => `${ASSET_ROOTS.SPRITES}/Items/Boxes/Box1/${name}.png`,
-  checkpoint: () => `${ASSET_ROOTS.SPRITES}/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`,
+  // Items - Use the correct organized paths
+  fruit: (name: string) => `${ASSET_ROOTS.OBJECTS}/Fruits/${name}.png`,
+  box: (name: string) => `${ASSET_ROOTS.OBJECTS}/Boxes/${name}/Idle.png`,
+  checkpoint: () => `${ASSET_ROOTS.OBJECTS}/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`,
   
   // Players
   player: (character: string, animation: string) => `${ASSET_ROOTS.SPRITES}/players/Main Characters/${character}/${animation} (32x32).png`,
