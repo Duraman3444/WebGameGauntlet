@@ -1,0 +1,25 @@
+{
+  "name": "fruit-runners-platformer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A multiplayer 2D platformer built with Phaser 3 and Socket.io",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "serve": "vite preview --host",
+    "server": "cd server && npm start"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.8"
+  },
+  "keywords": ["phaser", "game", "platformer", "multiplayer", "typescript"],
+  "author": "Your Name",
+  "license": "MIT"
+} 
