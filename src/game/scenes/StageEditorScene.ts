@@ -13,8 +13,10 @@ export class StageEditorScene extends Phaser.Scene {
     'spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb',
     // Boxes
     'box1', 'box2', 'box3',
-    // Enemies from assets
-    'slime_green', 'slime_purple', 'knight'
+    // Enemies
+    'slime_green', 'slime_purple', 'knight',
+    // Fruits
+    'apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'
   ];
   private currentAssetIndex: number = 0;
   private placedObjects: PlacedObject[] = [];
@@ -41,7 +43,16 @@ export class StageEditorScene extends Phaser.Scene {
       // Enemy sprites
       { key: 'slime_green', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_green.png' },
       { key: 'slime_purple', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_purple.png' },
-      { key: 'knight', path: 'assets/sprites/brackeys_platformer_assets/sprites/knight.png' }
+      { key: 'knight', path: 'assets/sprites/brackeys_platformer_assets/sprites/knight.png' },
+      // Fruits
+      { key: 'apple', path: 'assets/sprites/Items/Fruits/Apple.png' },
+      { key: 'bananas', path: 'assets/sprites/Items/Fruits/Bananas.png' },
+      { key: 'cherries', path: 'assets/sprites/Items/Fruits/Cherries.png' },
+      { key: 'kiwi', path: 'assets/sprites/Items/Fruits/Kiwi.png' },
+      { key: 'melon', path: 'assets/sprites/Items/Fruits/Melon.png' },
+      { key: 'orange', path: 'assets/sprites/Items/Fruits/Orange.png' },
+      { key: 'pineapple', path: 'assets/sprites/Items/Fruits/Pineapple.png' },
+      { key: 'strawberry', path: 'assets/sprites/Items/Fruits/Strawberry.png' }
     ];
 
     assetDefs.forEach(def => {
@@ -125,10 +136,17 @@ export class StageEditorScene extends Phaser.Scene {
   private createPalette(): void {
     const startX = 16;
     const startY = 60;
-    const iconSize = 28;
+    const iconSize = 32;
+    const padding = 8;
+    const cols = 10;
 
     this.assetKeys.forEach((key, index) => {
-      const sprite = this.add.sprite(startX + index * (iconSize + 8), startY, key).setScrollFactor(0);
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = startX + col * (iconSize + padding);
+      const y = startY + row * (iconSize + padding);
+
+      const sprite = this.add.sprite(x, y, key).setScrollFactor(0);
       sprite.setDisplaySize(iconSize, iconSize);
       sprite.setInteractive({ useHandCursor: true });
 
@@ -147,6 +165,7 @@ export class StageEditorScene extends Phaser.Scene {
   private highlightPalette(): void {
     this.paletteSprites.forEach((sprite, idx) => {
       sprite.setTint(idx === this.currentAssetIndex ? 0xffff00 : 0xffffff);
+      sprite.setScale(idx === this.currentAssetIndex ? 1.2 : 1);
     });
   }
 
