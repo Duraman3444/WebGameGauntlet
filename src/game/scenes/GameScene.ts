@@ -408,6 +408,11 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.localPlayer.sprite, this.levelSystem.getEnemies(), () => {
       this.localPlayer.takeDamage();
     });
+
+    // Enemies vs level geometry
+    this.physics.add.collider(this.levelSystem.getEnemies(), this.levelSystem.getPlatforms());
+    this.physics.add.collider(this.levelSystem.getEnemies(), this.levelSystem.getWalls());
+    this.physics.add.collider(this.levelSystem.getEnemies(), this.levelSystem.getBoxes());
   }
 
   private handleFruitCollection(player: Player, fruit: Phaser.Physics.Arcade.Sprite): void {
