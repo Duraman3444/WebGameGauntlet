@@ -7,7 +7,9 @@ export const ASSET_ROOTS = {
   TRAPS: 'assets/levels/common/Traps',
   OBJECTS: 'assets/levels/common/objects',
   UI: 'assets/ui',
-  LEVELS: 'assets/levels'
+  LEVELS: 'assets/levels',
+  SOUNDS: 'assets/sprites/sounds',
+  MUSIC: 'assets/sprites/music'
 };
 
 // Helper functions for common asset paths
@@ -42,6 +44,9 @@ export const AssetPaths = {
   // Players
   player: (character: string, animation: string) => `${ASSET_ROOTS.SPRITES}/players/Main Characters/${character}/${animation} (32x32).png`,
   
+  // Character spritesheets for animations
+  characterSpritesheet: (character: string, animation: string) => `${ASSET_ROOTS.SPRITES}/players/Main Characters/${character}/${animation} (32x32).png`,
+  
   // Enemies
   enemy: (name: string) => {
     // Handle different enemy types
@@ -55,6 +60,10 @@ export const AssetPaths = {
     }
     return `${ASSET_ROOTS.SPRITES}/enemies/${name}.png`;
   },
+  
+  // Audio
+  sound: (name: string) => `${ASSET_ROOTS.SOUNDS}/${name}.wav`,
+  music: (name: string) => `${ASSET_ROOTS.MUSIC}/${name}.mp3`,
   
   // UI
   ui: (name: string) => `${ASSET_ROOTS.UI}/${name}`,

@@ -328,291 +328,480 @@ export const LEVEL_THEMES = {
   }
 };
 
+// Level definitions with different themes and designs
 export const LEVELS = {
-  LEVEL_1: {
-    id: 'level_1',
-    name: 'Green Hills - World 1-1',
-    theme: LEVEL_THEMES.GRASSLAND,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
+  // Level 1: Grassland Tutorial - Easy introduction level
+  GRASSLAND_TUTORIAL: {
+    id: 'grassland_tutorial',
+    name: 'Sunny Meadows',
+    theme: 'grassland',
+    background: 'Green',
+    tileset: 'grassland_tileset',
+    difficulty: 'Easy',
     timeLimit: 300,
-    difficulty: 1
+    description: 'A peaceful grassland perfect for learning the basics',
+    
+    // Simple tutorial layout
+    platforms: [
+      // Ground platforms
+      { x: 0, y: 688, width: 400, height: 32, type: 'ground' },
+      { x: 500, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 900, y: 688, width: 400, height: 32, type: 'ground' },
+      { x: 1400, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 1800, y: 688, width: 400, height: 32, type: 'ground' },
+      
+      // Tutorial platforms - gradually increasing difficulty
+      { x: 400, y: 600, width: 100, height: 16, type: 'platform' },
+      { x: 550, y: 550, width: 100, height: 16, type: 'platform' },
+      { x: 700, y: 500, width: 100, height: 16, type: 'platform' },
+      { x: 850, y: 450, width: 100, height: 16, type: 'platform' },
+      
+      // Mid-level platforms
+      { x: 1050, y: 600, width: 150, height: 16, type: 'platform' },
+      { x: 1250, y: 550, width: 100, height: 16, type: 'platform' },
+      
+      // End area platforms
+      { x: 1600, y: 600, width: 100, height: 16, type: 'platform' },
+      { x: 1750, y: 550, width: 100, height: 16, type: 'platform' },
+    ],
+    
+    // Simple fruit collection
+    fruits: [
+      { x: 450, y: 570, type: 'apple' },
+      { x: 600, y: 520, type: 'bananas' },
+      { x: 750, y: 470, type: 'cherries' },
+      { x: 900, y: 420, type: 'orange' },
+      { x: 1100, y: 570, type: 'strawberry' },
+      { x: 1300, y: 520, type: 'kiwi' },
+      { x: 1650, y: 570, type: 'melon' },
+      { x: 1800, y: 520, type: 'pineapple' },
+    ],
+    
+    // Minimal traps for tutorial
+    traps: [
+      { x: 1200, y: 624, type: 'trampoline' },
+      { x: 1500, y: 624, type: 'trampoline' },
+    ],
+    
+    // Tutorial boxes for jumping practice
+    boxes: [
+      { x: 320, y: 656, type: 'box1' },
+      { x: 1320, y: 656, type: 'box2' },
+    ],
+    
+    checkpoints: [
+      { x: 800, y: 600 },
+      { x: 1600, y: 600 },
+    ],
+    
+    enemies: [],
+    
+    playerStart: { x: 100, y: 600 },
+    levelEnd: { x: 2000, y: 600 },
   },
-  LEVEL_2: {
-    id: 'level_2',
-    name: 'Crystal Caverns - World 1-2',
-    theme: LEVEL_THEMES.CAVE,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 250,
-    difficulty: 2
+
+  // Level 2: Autumn Forest - Medium difficulty with more complex platforming
+  AUTUMN_FOREST: {
+    id: 'autumn_forest',
+    name: 'Autumn Canopy',
+    theme: 'autumn',
+    background: 'Brown',
+    tileset: 'autumn_tileset',
+    difficulty: 'Medium',
+    timeLimit: 400,
+    description: 'Navigate through the colorful autumn forest',
+    
+    platforms: [
+      // Ground with gaps for challenge
+      { x: 0, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 400, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 700, y: 688, width: 150, height: 32, type: 'ground' },
+      { x: 950, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1250, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 1650, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1950, y: 688, width: 300, height: 32, type: 'ground' },
+      
+      // Tree branch platforms - varying heights
+      { x: 320, y: 600, width: 80, height: 16, type: 'platform' },
+      { x: 450, y: 550, width: 100, height: 16, type: 'platform' },
+      { x: 600, y: 500, width: 80, height: 16, type: 'platform' },
+      { x: 750, y: 450, width: 100, height: 16, type: 'platform' },
+      { x: 900, y: 400, width: 80, height: 16, type: 'platform' },
+      
+      // Mid-level canopy
+      { x: 1100, y: 550, width: 120, height: 16, type: 'platform' },
+      { x: 1280, y: 500, width: 100, height: 16, type: 'platform' },
+      { x: 1450, y: 450, width: 120, height: 16, type: 'platform' },
+      
+      // High canopy section
+      { x: 1700, y: 400, width: 100, height: 16, type: 'platform' },
+      { x: 1850, y: 350, width: 100, height: 16, type: 'platform' },
+      { x: 2000, y: 300, width: 150, height: 16, type: 'platform' },
+    ],
+    
+    fruits: [
+      { x: 360, y: 570, type: 'apple' },
+      { x: 500, y: 520, type: 'bananas' },
+      { x: 640, y: 470, type: 'cherries' },
+      { x: 800, y: 420, type: 'orange' },
+      { x: 950, y: 370, type: 'strawberry' },
+      { x: 1150, y: 520, type: 'kiwi' },
+      { x: 1330, y: 470, type: 'melon' },
+      { x: 1500, y: 420, type: 'pineapple' },
+      { x: 1750, y: 370, type: 'apple' },
+      { x: 1900, y: 320, type: 'bananas' },
+      { x: 2050, y: 270, type: 'cherries' },
+    ],
+    
+    traps: [
+      { x: 600, y: 624, type: 'fire', cycle: 3000 },
+      { x: 1000, y: 624, type: 'fire', cycle: 2500 },
+      { x: 1400, y: 624, type: 'trampoline' },
+      { x: 1800, y: 624, type: 'trampoline' },
+      { x: 1300, y: 456, type: 'saw' },
+    ],
+    
+    boxes: [
+      { x: 250, y: 656, type: 'box1' },
+      { x: 500, y: 656, type: 'box2' },
+      { x: 850, y: 656, type: 'box3' },
+      { x: 1200, y: 656, type: 'box1' },
+      { x: 1900, y: 656, type: 'box2' },
+    ],
+    
+    checkpoints: [
+      { x: 600, y: 600 },
+      { x: 1200, y: 600 },
+      { x: 1800, y: 600 },
+    ],
+    
+    enemies: [
+      { x: 500, y: 656, type: 'goblin' },
+      { x: 1100, y: 656, type: 'mushroom' },
+      { x: 1700, y: 656, type: 'goblin' },
+    ],
+    
+    playerStart: { x: 100, y: 600 },
+    levelEnd: { x: 2200, y: 600 },
   },
-  LEVEL_3: {
-    id: 'level_3',
-    name: 'Central City - World 1-3',
-    theme: LEVEL_THEMES.CITY,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 280,
-    difficulty: 3
+
+  // Level 3: Tropical Paradise - Advanced platforming with water elements
+  TROPICAL_PARADISE: {
+    id: 'tropical_paradise',
+    name: 'Tropical Paradise',
+    theme: 'tropics',
+    background: 'Blue',
+    tileset: 'tropics_tileset',
+    difficulty: 'Hard',
+    timeLimit: 450,
+    description: 'Navigate through palm trees and tropical challenges',
+    
+    platforms: [
+      // Beach ground with water gaps
+      { x: 0, y: 688, width: 250, height: 32, type: 'ground' },
+      { x: 350, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 650, y: 688, width: 150, height: 32, type: 'ground' },
+      { x: 900, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1200, y: 688, width: 250, height: 32, type: 'ground' },
+      { x: 1550, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1850, y: 688, width: 300, height: 32, type: 'ground' },
+      
+      // Palm tree platforms - challenging jumps
+      { x: 280, y: 600, width: 60, height: 16, type: 'platform' },
+      { x: 380, y: 550, width: 80, height: 16, type: 'platform' },
+      { x: 500, y: 500, width: 60, height: 16, type: 'platform' },
+      { x: 620, y: 450, width: 80, height: 16, type: 'platform' },
+      { x: 750, y: 400, width: 60, height: 16, type: 'platform' },
+      { x: 850, y: 350, width: 80, height: 16, type: 'platform' },
+      
+      // Floating island platforms
+      { x: 1050, y: 550, width: 100, height: 16, type: 'platform' },
+      { x: 1200, y: 500, width: 80, height: 16, type: 'platform' },
+      { x: 1350, y: 450, width: 100, height: 16, type: 'platform' },
+      { x: 1500, y: 400, width: 80, height: 16, type: 'platform' },
+      
+      // High palm canopy
+      { x: 1650, y: 350, width: 100, height: 16, type: 'platform' },
+      { x: 1800, y: 300, width: 120, height: 16, type: 'platform' },
+      { x: 1950, y: 250, width: 100, height: 16, type: 'platform' },
+      
+      // Moving platforms (falling platforms for challenge)
+      { x: 820, y: 500, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1120, y: 450, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1720, y: 400, width: 60, height: 16, type: 'falling_platform' },
+    ],
+    
+    fruits: [
+      { x: 320, y: 570, type: 'pineapple' },
+      { x: 420, y: 520, type: 'bananas' },
+      { x: 540, y: 470, type: 'kiwi' },
+      { x: 660, y: 420, type: 'melon' },
+      { x: 790, y: 370, type: 'pineapple' },
+      { x: 890, y: 320, type: 'bananas' },
+      { x: 1090, y: 520, type: 'kiwi' },
+      { x: 1240, y: 470, type: 'melon' },
+      { x: 1390, y: 420, type: 'pineapple' },
+      { x: 1540, y: 370, type: 'bananas' },
+      { x: 1690, y: 320, type: 'kiwi' },
+      { x: 1840, y: 270, type: 'melon' },
+      { x: 1990, y: 220, type: 'pineapple' },
+    ],
+    
+    traps: [
+      { x: 300, y: 624, type: 'trampoline' },
+      { x: 580, y: 624, type: 'fire', cycle: 2000 },
+      { x: 950, y: 624, type: 'trampoline' },
+      { x: 1300, y: 624, type: 'fire', cycle: 2500 },
+      { x: 1600, y: 624, type: 'trampoline' },
+      { x: 1900, y: 624, type: 'fire', cycle: 3000 },
+      { x: 1400, y: 406, type: 'saw' },
+      { x: 1750, y: 306, type: 'saw' },
+    ],
+    
+    boxes: [
+      { x: 200, y: 656, type: 'box1' },
+      { x: 450, y: 656, type: 'box2' },
+      { x: 700, y: 656, type: 'box3' },
+      { x: 1150, y: 656, type: 'box1' },
+      { x: 1500, y: 656, type: 'box2' },
+      { x: 1800, y: 656, type: 'box3' },
+    ],
+    
+    checkpoints: [
+      { x: 500, y: 600 },
+      { x: 1000, y: 600 },
+      { x: 1500, y: 600 },
+      { x: 2000, y: 600 },
+    ],
+    
+    enemies: [
+      { x: 400, y: 656, type: 'flying_eye' },
+      { x: 800, y: 656, type: 'skeleton' },
+      { x: 1250, y: 656, type: 'flying_eye' },
+      { x: 1650, y: 656, type: 'skeleton' },
+      { x: 2000, y: 656, type: 'flying_eye' },
+    ],
+    
+    playerStart: { x: 100, y: 600 },
+    levelEnd: { x: 2250, y: 600 },
   },
-  LEVEL_4: {
-    id: 'level_4',
-    name: 'Stringstar Fields - World 1-4',
-    theme: LEVEL_THEMES.STRINGSTAR_FIELDS,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 320,
-    difficulty: 2
-  }
+
+  // Level 4: Winter Wonderland - Ice physics and challenging jumps
+  WINTER_WONDERLAND: {
+    id: 'winter_wonderland',
+    name: 'Frozen Peaks',
+    theme: 'winter',
+    background: 'Gray',
+    tileset: 'winter_tileset',
+    difficulty: 'Expert',
+    timeLimit: 500,
+    description: 'Brave the icy peaks and frozen challenges',
+    
+    platforms: [
+      // Icy ground with slippery sections
+      { x: 0, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 300, y: 688, width: 150, height: 32, type: 'ground' },
+      { x: 550, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 850, y: 688, width: 150, height: 32, type: 'ground' },
+      { x: 1100, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1400, y: 688, width: 150, height: 32, type: 'ground' },
+      { x: 1650, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1950, y: 688, width: 300, height: 32, type: 'ground' },
+      
+      // Ice platforms - precise jumping required
+      { x: 220, y: 600, width: 60, height: 16, type: 'platform' },
+      { x: 350, y: 550, width: 80, height: 16, type: 'platform' },
+      { x: 480, y: 500, width: 60, height: 16, type: 'platform' },
+      { x: 600, y: 450, width: 80, height: 16, type: 'platform' },
+      { x: 720, y: 400, width: 60, height: 16, type: 'platform' },
+      { x: 820, y: 350, width: 80, height: 16, type: 'platform' },
+      { x: 950, y: 300, width: 60, height: 16, type: 'platform' },
+      
+      // Mountain ledges
+      { x: 1050, y: 550, width: 100, height: 16, type: 'platform' },
+      { x: 1200, y: 500, width: 80, height: 16, type: 'platform' },
+      { x: 1350, y: 450, width: 100, height: 16, type: 'platform' },
+      { x: 1500, y: 400, width: 80, height: 16, type: 'platform' },
+      { x: 1650, y: 350, width: 100, height: 16, type: 'platform' },
+      
+      // Peak platforms
+      { x: 1800, y: 300, width: 120, height: 16, type: 'platform' },
+      { x: 1950, y: 250, width: 100, height: 16, type: 'platform' },
+      { x: 2100, y: 200, width: 120, height: 16, type: 'platform' },
+      
+      // Challenging falling platforms
+      { x: 780, y: 500, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1020, y: 450, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1280, y: 400, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1580, y: 350, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1880, y: 300, width: 60, height: 16, type: 'falling_platform' },
+    ],
+    
+    fruits: [
+      { x: 260, y: 570, type: 'apple' },
+      { x: 390, y: 520, type: 'cherries' },
+      { x: 520, y: 470, type: 'strawberry' },
+      { x: 640, y: 420, type: 'apple' },
+      { x: 760, y: 370, type: 'cherries' },
+      { x: 860, y: 320, type: 'strawberry' },
+      { x: 990, y: 270, type: 'apple' },
+      { x: 1090, y: 520, type: 'cherries' },
+      { x: 1240, y: 470, type: 'strawberry' },
+      { x: 1390, y: 420, type: 'apple' },
+      { x: 1540, y: 370, type: 'cherries' },
+      { x: 1690, y: 320, type: 'strawberry' },
+      { x: 1840, y: 270, type: 'apple' },
+      { x: 1990, y: 220, type: 'cherries' },
+      { x: 2140, y: 170, type: 'strawberry' },
+    ],
+    
+    traps: [
+      { x: 250, y: 624, type: 'trampoline' },
+      { x: 500, y: 624, type: 'fire', cycle: 1500 },
+      { x: 750, y: 624, type: 'trampoline' },
+      { x: 1000, y: 624, type: 'fire', cycle: 2000 },
+      { x: 1250, y: 624, type: 'trampoline' },
+      { x: 1500, y: 624, type: 'fire', cycle: 1800 },
+      { x: 1750, y: 624, type: 'trampoline' },
+      { x: 2000, y: 624, type: 'fire', cycle: 2200 },
+      { x: 900, y: 356, type: 'saw' },
+      { x: 1450, y: 406, type: 'saw' },
+      { x: 1850, y: 306, type: 'saw' },
+    ],
+    
+    boxes: [
+      { x: 150, y: 656, type: 'box1' },
+      { x: 400, y: 656, type: 'box2' },
+      { x: 650, y: 656, type: 'box3' },
+      { x: 950, y: 656, type: 'box1' },
+      { x: 1200, y: 656, type: 'box2' },
+      { x: 1550, y: 656, type: 'box3' },
+      { x: 1850, y: 656, type: 'box1' },
+    ],
+    
+    checkpoints: [
+      { x: 400, y: 600 },
+      { x: 800, y: 600 },
+      { x: 1200, y: 600 },
+      { x: 1700, y: 600 },
+      { x: 2100, y: 600 },
+    ],
+    
+    enemies: [
+      { x: 350, y: 656, type: 'skeleton' },
+      { x: 700, y: 656, type: 'flying_eye' },
+      { x: 1050, y: 656, type: 'skeleton' },
+      { x: 1400, y: 656, type: 'flying_eye' },
+      { x: 1750, y: 656, type: 'skeleton' },
+      { x: 2050, y: 656, type: 'flying_eye' },
+    ],
+    
+    playerStart: { x: 100, y: 600 },
+    levelEnd: { x: 2350, y: 600 },
+  },
+
+  // Level 5: Cave Adventure - Dark underground level
+  CAVE_ADVENTURE: {
+    id: 'cave_adventure',
+    name: 'Crystal Caverns',
+    theme: 'cave',
+    background: 'Purple',
+    tileset: 'grassland_tileset', // Using grassland as base, will add cave-specific assets later
+    difficulty: 'Hard',
+    timeLimit: 400,
+    description: 'Explore the mysterious underground caverns',
+    
+    platforms: [
+      // Cave floor with stalactites
+      { x: 0, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 400, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 700, y: 688, width: 250, height: 32, type: 'ground' },
+      { x: 1050, y: 688, width: 200, height: 32, type: 'ground' },
+      { x: 1350, y: 688, width: 300, height: 32, type: 'ground' },
+      { x: 1750, y: 688, width: 250, height: 32, type: 'ground' },
+      
+      // Cave ledges - multi-level exploration
+      { x: 150, y: 600, width: 100, height: 16, type: 'platform' },
+      { x: 300, y: 550, width: 80, height: 16, type: 'platform' },
+      { x: 450, y: 500, width: 100, height: 16, type: 'platform' },
+      { x: 600, y: 450, width: 80, height: 16, type: 'platform' },
+      { x: 750, y: 400, width: 100, height: 16, type: 'platform' },
+      { x: 900, y: 350, width: 80, height: 16, type: 'platform' },
+      
+      // Upper cave system
+      { x: 1100, y: 550, width: 120, height: 16, type: 'platform' },
+      { x: 1280, y: 500, width: 100, height: 16, type: 'platform' },
+      { x: 1450, y: 450, width: 120, height: 16, type: 'platform' },
+      { x: 1620, y: 400, width: 100, height: 16, type: 'platform' },
+      { x: 1800, y: 350, width: 120, height: 16, type: 'platform' },
+      
+      // Crystal chamber
+      { x: 1950, y: 300, width: 150, height: 16, type: 'platform' },
+      { x: 2150, y: 250, width: 100, height: 16, type: 'platform' },
+      
+      // Unstable cave platforms
+      { x: 520, y: 600, width: 60, height: 16, type: 'falling_platform' },
+      { x: 820, y: 500, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1020, y: 450, width: 60, height: 16, type: 'falling_platform' },
+      { x: 1720, y: 400, width: 60, height: 16, type: 'falling_platform' },
+    ],
+    
+    fruits: [
+      { x: 200, y: 570, type: 'kiwi' },
+      { x: 340, y: 520, type: 'melon' },
+      { x: 490, y: 470, type: 'kiwi' },
+      { x: 640, y: 420, type: 'melon' },
+      { x: 790, y: 370, type: 'kiwi' },
+      { x: 940, y: 320, type: 'melon' },
+      { x: 1140, y: 520, type: 'kiwi' },
+      { x: 1320, y: 470, type: 'melon' },
+      { x: 1490, y: 420, type: 'kiwi' },
+      { x: 1660, y: 370, type: 'melon' },
+      { x: 1840, y: 320, type: 'kiwi' },
+      { x: 1990, y: 270, type: 'melon' },
+      { x: 2190, y: 220, type: 'kiwi' },
+    ],
+    
+    traps: [
+      { x: 350, y: 624, type: 'fire', cycle: 2500 },
+      { x: 650, y: 624, type: 'trampoline' },
+      { x: 950, y: 624, type: 'fire', cycle: 2000 },
+      { x: 1200, y: 624, type: 'trampoline' },
+      { x: 1500, y: 624, type: 'fire', cycle: 1800 },
+      { x: 1850, y: 624, type: 'trampoline' },
+      { x: 700, y: 456, type: 'saw' },
+      { x: 1350, y: 506, type: 'saw' },
+      { x: 1750, y: 406, type: 'saw' },
+    ],
+    
+    boxes: [
+      { x: 250, y: 656, type: 'box1' },
+      { x: 550, y: 656, type: 'box2' },
+      { x: 850, y: 656, type: 'box3' },
+      { x: 1150, y: 656, type: 'box1' },
+      { x: 1450, y: 656, type: 'box2' },
+      { x: 1900, y: 656, type: 'box3' },
+    ],
+    
+    checkpoints: [
+      { x: 500, y: 600 },
+      { x: 1000, y: 600 },
+      { x: 1500, y: 600 },
+      { x: 2000, y: 600 },
+    ],
+    
+    enemies: [
+      { x: 450, y: 656, type: 'goblin' },
+      { x: 800, y: 656, type: 'mushroom' },
+      { x: 1100, y: 656, type: 'goblin' },
+      { x: 1400, y: 656, type: 'mushroom' },
+      { x: 1800, y: 656, type: 'goblin' },
+    ],
+    
+    playerStart: { x: 100, y: 600 },
+    levelEnd: { x: 2300, y: 600 },
+  },
 };
 
-export const LEVEL_DATA = {
-  // World 1-1 inspired layout - platforms and obstacles (adjusted for 720p)
-  platforms: [
-    // Starting ground area (classic Mario 1-1 beginning) - now at bottom of 720p screen
-    { x: 0, y: 688, width: 832, height: 32, type: 'ground' },
-    
-    // Gap before first obstacles (like original)
-    { x: 896, y: 688, width: 192, height: 32, type: 'ground' },
-    
-    // Platform after first pit
-    { x: 1152, y: 688, width: 256, height: 32, type: 'ground' },
-    
-    // Mid-level ground section
-    { x: 1472, y: 688, width: 320, height: 32, type: 'ground' },
-    
-    // Section before the "pipe area"
-    { x: 1856, y: 688, width: 384, height: 32, type: 'ground' },
-    
-    // Pipe area ground
-    { x: 2304, y: 688, width: 256, height: 32, type: 'ground' },
-    
-    // Ground before stairs
-    { x: 2624, y: 688, width: 320, height: 32, type: 'ground' },
-    
-    // Staircase section (classic Mario 1-1 stairs) - adjusted for 720p
-    { x: 3008, y: 656, width: 64, height: 64, type: 'platform' },   // Step 1
-    { x: 3072, y: 624, width: 64, height: 96, type: 'platform' },    // Step 2
-    { x: 3136, y: 592, width: 64, height: 128, type: 'platform' },   // Step 3
-    { x: 3200, y: 560, width: 64, height: 160, type: 'platform' },   // Step 4
-    
-    // Top of stairs platform
-    { x: 3264, y: 560, width: 128, height: 160, type: 'platform' },
-    
-    // Down stairs (reverse)
-    { x: 3392, y: 592, width: 64, height: 128, type: 'platform' },   // Step 3
-    { x: 3456, y: 624, width: 64, height: 96, type: 'platform' },    // Step 2
-    { x: 3520, y: 656, width: 64, height: 64, type: 'platform' },   // Step 1
-    
-    // Final ground section to flagpole
-    { x: 3584, y: 688, width: 416, height: 32, type: 'ground' },
-    
-    // Classic floating question block platforms (adjusted heights for 720p)
-    { x: 512, y: 496, width: 32, height: 32, type: 'platform' },      // First question block position
-    { x: 640, y: 496, width: 96, height: 32, type: 'platform' },      // Triple question block area
-    { x: 768, y: 496, width: 32, height: 32, type: 'platform' },      // End of question block area
-    
-    // High question block (like original Mario)
-    { x: 640, y: 400, width: 32, height: 32, type: 'platform' },      // High question block
-    
-    // Brick block area platforms
-    { x: 1024, y: 496, width: 32, height: 32, type: 'platform' },
-    { x: 1280, y: 496, width: 128, height: 32, type: 'platform' },    // Brick block area
-    { x: 1280, y: 400, width: 32, height: 32, type: 'platform' },     // High brick block
-    
-    // Mid-level elevated platforms
-    { x: 1792, y: 624, width: 64, height: 96, type: 'platform' },     // Small pipe equivalent
-    { x: 2176, y: 560, width: 64, height: 160, type: 'platform' },    // Medium pipe equivalent
-    { x: 2432, y: 496, width: 64, height: 224, type: 'platform' },    // Large pipe equivalent
-    { x: 2688, y: 560, width: 64, height: 160, type: 'platform' },    // Medium pipe equivalent
-    
-    // Additional floating platforms for more Mario-like feel
-    { x: 2176, y: 524, width: 64, height: 32, type: 'platform' },     // Platform on top of pipe
-    
-    // Falling platforms for added challenge
-    { x: 1600, y: 464, width: 96, height: 16, type: 'falling_platform' },
-    { x: 1920, y: 544, width: 96, height: 16, type: 'falling_platform' },
-    { x: 2800, y: 544, width: 96, height: 16, type: 'falling_platform' },
-    
-    // Box platforms (destructible blocks)
-    { x: 512, y: 464, width: 32, height: 32, type: 'box' },           // Above ground level
-    { x: 640, y: 464, width: 32, height: 32, type: 'box' },           // Question block area
-    { x: 672, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 704, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 768, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 640, y: 368, width: 32, height: 32, type: 'box' },           // High question block
-    
-    // Brick block boxes
-    { x: 1024, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 1280, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 1312, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 1344, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 1376, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 1280, y: 368, width: 32, height: 32, type: 'box' },          // High brick block
-    
-    // Additional boxes throughout level
-    { x: 1600, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 2000, y: 464, width: 32, height: 32, type: 'box' },
-    { x: 2500, y: 464, width: 32, height: 32, type: 'box' }
-  ],
-  
-  // Trap obstacles (replacing classic Mario enemies)
-  traps: [
-    // Fire traps replacing some enemies
-    { x: 960, y: 624, type: 'fire', cycle: 3000 },                    // Mid-level fire trap
-    { x: 1440, y: 624, type: 'fire', cycle: 3000 },                   // Before pipe area
-    { x: 1824, y: 624, type: 'fire', cycle: 3000 },                   // Pipe area
-    
-    // Trampolines to help with platforming (replacing some power-ups)
-    { x: 448, y: 656, type: 'trampoline' },                           // Early trampoline
-    { x: 1088, y: 656, type: 'trampoline' },                          // Help cross gap
-    { x: 1664, y: 656, type: 'trampoline' },                          // Mid-level boost
-    { x: 2272, y: 656, type: 'trampoline' },                          // Pipe area boost
-    { x: 2960, y: 656, type: 'trampoline' },                          // Before stairs
-    
-    // Saws in strategic positions (replacing Koopa Troopas)
-    { x: 1200, y: 544, type: 'saw', movement: 'horizontal', range: 100 },  // Patrol area
-    { x: 1500, y: 444, type: 'saw', movement: 'vertical', range: 80 },     // Vertical patrol
-    { x: 1900, y: 544, type: 'saw', movement: 'horizontal', range: 120 },  // Pipe area patrol
-    { x: 2600, y: 544, type: 'saw', movement: 'horizontal', range: 100 },  // Pre-stairs area
-    
-    // Falling platforms for added challenge
-    { x: 1600, y: 544, type: 'falling_platform' },
-    { x: 1920, y: 494, type: 'falling_platform' },
-    { x: 2800, y: 594, type: 'falling_platform' }
-  ],
-  
-  // Fruits (replacing coins in classic Mario 1-1 positions)
-  fruits: [
-    // Starting area fruits
-    { x: 256, y: 594, type: 'apple' },
-    { x: 384, y: 594, type: 'bananas' },
-    { x: 512, y: 424, type: 'cherries' },                               // Above first question block
-    
-    // Question block area fruits
-    { x: 640, y: 424, type: 'melon' },                                // Above triple blocks
-    { x: 672, y: 424, type: 'kiwi' },
-    { x: 704, y: 424, type: 'orange' },
-    { x: 640, y: 324, type: 'pineapple' },                            // Above high question block
-    { x: 768, y: 424, type: 'strawberry' },
-    
-    // Brick block area fruits
-    { x: 1024, y: 424, type: 'apple' },
-    { x: 1280, y: 424, type: 'bananas' },
-    { x: 1312, y: 424, type: 'cherries' },
-    { x: 1344, y: 424, type: 'kiwi' },
-    { x: 1376, y: 424, type: 'melon' },
-    { x: 1280, y: 324, type: 'pineapple' },                           // Above high brick block
-    
-    // Pipe area fruits
-    { x: 1792, y: 494, type: 'orange' },                              // On small pipe
-    { x: 2176, y: 494, type: 'strawberry' },                          // On medium pipe
-    { x: 2432, y: 424, type: 'apple' },                               // On large pipe
-    { x: 2688, y: 494, type: 'bananas' },                              // On medium pipe
-    
-    // Scattered fruits throughout level
-    { x: 800, y: 594, type: 'cherries' },
-    { x: 1152, y: 594, type: 'kiwi' },
-    { x: 1472, y: 594, type: 'melon' },
-    { x: 1600, y: 424, type: 'orange' },                              // On moving platform
-    { x: 1856, y: 594, type: 'pineapple' },
-    { x: 2304, y: 594, type: 'strawberry' },
-    { x: 2624, y: 594, type: 'apple' },
-    
-    // Stairs area fruits
-    { x: 3008, y: 594, type: 'bananas' },                              // On first step
-    { x: 3136, y: 524, type: 'cherries' },                              // On third step
-    { x: 3264, y: 494, type: 'kiwi' },                                // On top platform
-    { x: 3456, y: 554, type: 'melon' },                               // On down stairs
-    
-    // High-value fruits in dangerous areas
-    { x: 880, y: 594, type: 'pineapple' },                            // Near gap
-    { x: 1400, y: 344, type: 'strawberry' },                          // High reward
-    { x: 2000, y: 444, type: 'melon' },                               // Near saw
-    { x: 2700, y: 494, type: 'pineapple' },                           // Before stairs
-    
-    // Final area fruits
-    { x: 3584, y: 594, type: 'apple' },
-    { x: 3700, y: 594, type: 'bananas' },
-    { x: 3800, y: 594, type: 'cherries' },
-    { x: 3900, y: 594, type: 'kiwi' }
-  ],
-  // Enemies for stage 1
-  enemies: [
-    { x: 640, y: 656, type: 'flying_eye' },
-    { x: 1280, y: 656, type: 'goblin' },
-    { x: 2000, y: 656, type: 'mushroom' },
-    { x: 2600, y: 656, type: 'skeleton' }
-  ],
-  
-  // Checkpoints (strategic save points like Mario 1-1)
-  checkpoints: [
-    { x: 800, y: 644, type: 'checkpoint' },                           // After first obstacles
-    { x: 1600, y: 644, type: 'checkpoint' },                          // Mid-level
-    { x: 2400, y: 644, type: 'checkpoint' },                          // Before stairs
-    { x: 3264, y: 524, type: 'checkpoint' }                           // Top of stairs
-  ],
-  
-  // Goal at the end (classic Mario 1-1 flagpole position)
-  goal: {
-    x: 3936,                                                           // Classic flagpole distance
-    y: 494,
-    type: 'end_flag'
-  }
-}; 
-
-export const INITIAL_DATA = {
-  GRASSLAND: {
-    theme: LEVEL_THEMES.GRASSLAND,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 400,
-    difficulty: 1
-  },
-  CAVE: {
-    theme: LEVEL_THEMES.CAVE,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 350,
-    difficulty: 3
-  },
-  CITY: {
-    theme: LEVEL_THEMES.CITY,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 320,
-    difficulty: 2
-  },
-  STRINGSTAR_FIELDS: {
-    theme: LEVEL_THEMES.STRINGSTAR_FIELDS,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 400,
-    difficulty: 1
-  },
-  WINTER: {
-    theme: LEVEL_THEMES.WINTER,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 350,
-    difficulty: 2
-  },
-  DESERT: {
-    theme: LEVEL_THEMES.DESERT,
-    worldWidth: 3200,
-    worldHeight: 720,
-    spawnPoint: { x: 100, y: 600 },
-    timeLimit: 320,
-    difficulty: 2
-  }
-}; 
+// Current level data - will be replaced by level selection
+export const LEVEL_DATA = LEVELS.GRASSLAND_TUTORIAL; 

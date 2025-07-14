@@ -6,7 +6,7 @@ export class MenuScene extends Phaser.Scene {
   private selectedCharacter: string = 'pinkman';
   private selectedMode: string = 'single';
   private characterSprites: Phaser.GameObjects.Sprite[] = [];
-  private menuCursor: Phaser.GameObjects.Rectangle | null = null;
+  private menuCursor: Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image | null = null;
   private currentSelection: number = 0;
   private menuOptions: string[] = ['1 PLAYER GAME', '2 PLAYER GAME', 'CHARACTER SELECT', 'STAGE SELECT', 'STAGE EDITOR', 'SETTINGS'];
   private characterPreview: Phaser.GameObjects.Sprite | null = null;
@@ -26,13 +26,130 @@ export class MenuScene extends Phaser.Scene {
   preload(): void {
     console.log('🎮 MenuScene: Starting asset preload...');
     
+    // Load background
+    this.load.image('background_blue', AssetPaths.background('Blue'));
+    this.load.image('background_green', AssetPaths.background('Green'));
+    this.load.image('background_pink', AssetPaths.background('Pink'));
+    this.load.image('background_purple', AssetPaths.background('Purple'));
+    this.load.image('background_yellow', AssetPaths.background('Yellow'));
+    
+    // Load Wood and Paper UI assets
+    console.log('🎨 Loading Wood and Paper UI assets...');
+    
+    // Load banners for title
+    this.load.image('big_banner_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Big Banner/1.png');
+    this.load.image('big_banner_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Big Banner/2.png');
+    this.load.image('big_banner_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Big Banner/3.png');
+    
+    // Load buttons
+    this.load.image('yellow_button_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Button/1.png');
+    this.load.image('yellow_button_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Button/2.png');
+    this.load.image('yellow_button_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Button/3.png');
+    this.load.image('yellow_button_4', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Button/4.png');
+    
+    // Load green buttons for different states
+    this.load.image('green_button_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Green Button/1.png');
+    this.load.image('green_button_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Green Button/2.png');
+    this.load.image('green_button_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Green Button/3.png');
+    
+    // Load paper backgrounds
+    this.load.image('yellow_paper_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/1.png');
+    this.load.image('yellow_paper_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/2.png');
+    this.load.image('yellow_paper_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/3.png');
+    this.load.image('yellow_paper_4', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/4.png');
+    
+    // Load small banners for character selection
+    this.load.image('small_banner_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Small Banner/1.png');
+    this.load.image('small_banner_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Small Banner/2.png');
+    this.load.image('small_banner_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Small Banner/3.png');
+    
     // Load character assets
-    this.loadCharacterAssets();
+    console.log('👤 Loading character assets...');
+    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
     
-    // Load other game assets
-    this.loadGameAssets();
+    characters.forEach(character => {
+      const idleKey = `${character}_idle`;
+      const runKey = `${character}_run`;
+      const jumpKey = `${character}_jump`;
+      const fallKey = `${character}_fall`;
+      const hitKey = `${character}_hit`;
+      
+      // Load idle animation
+      this.load.spritesheet(idleKey, AssetPaths.characterSpritesheet(character, 'Idle'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load run animation
+      this.load.spritesheet(runKey, AssetPaths.characterSpritesheet(character, 'Run'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load jump animation
+      this.load.spritesheet(jumpKey, AssetPaths.characterSpritesheet(character, 'Jump'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load fall animation
+      this.load.spritesheet(fallKey, AssetPaths.characterSpritesheet(character, 'Fall'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load hit animation
+      this.load.spritesheet(hitKey, AssetPaths.characterSpritesheet(character, 'Hit'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+    });
     
-    // Set up loading event handlers
+    // Load game assets
+    console.log('🎮 Loading game assets...');
+    
+    // Load seasonal tilesets
+    this.load.spritesheet('grassland_tileset', AssetPaths.seasonalTileset('1 - Grassland'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('autumn_tileset', AssetPaths.seasonalTileset('2 - Autumn Forest'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('tropics_tileset', AssetPaths.seasonalTileset('3 - Tropics'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('winter_tileset', AssetPaths.seasonalTileset('4 - Winter World'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    // Load terrain tileset as fallback
+    this.load.image('terrain_tileset', AssetPaths.terrain('Terrain (16x16).png'));
+    
+    // Load fruits
+    const fruits = ['apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'];
+    fruits.forEach(fruit => {
+      this.load.image(fruit, AssetPaths.fruit(fruit));
+    });
+    
+    // Load sound effects
+    this.load.audio('coin_sound', AssetPaths.sound('coin'));
+    this.load.audio('jump_sound', AssetPaths.sound('jump'));
+    this.load.audio('hurt_sound', AssetPaths.sound('hurt'));
+    this.load.audio('explosion_sound', AssetPaths.sound('explosion'));
+    this.load.audio('powerup_sound', AssetPaths.sound('powerup'));
+    this.load.audio('stomp_sound', AssetPaths.sound('stomp'));
+    
+    // Load music
+    this.load.audio('time_for_adventure', AssetPaths.music('time_for_adventure'));
+    
+    // Set up load event handlers
     this.setupLoadEventHandlers();
   }
 
@@ -195,34 +312,34 @@ export class MenuScene extends Phaser.Scene {
   private createTitle(): void {
     const centerX = this.cameras.main.width / 2;
     
-    // Create title box like Super Mario Bros
-    const titleBox = this.add.graphics();
-    titleBox.fillStyle(0x8B4513);
-    titleBox.fillRoundedRect(centerX - 200, 150, 400, 120, 10);
-    titleBox.lineStyle(4, 0x000000);
-    titleBox.strokeRoundedRect(centerX - 200, 150, 400, 120, 10);
+    // Create title using Wood and Paper UI banner
+    const titleBanner = this.add.image(centerX, 200, 'big_banner_2');
+    titleBanner.setScale(4); // Make it bigger for title
     
-    // Main title
-    this.gameTitle = this.add.text(centerX, 180, 'SUPER', {
-      fontSize: '32px',
-      color: '#FFFFFF',
-      fontFamily: 'Arial Black',
-      stroke: '#000000',
-      strokeThickness: 3
-    }).setOrigin(0.5);
-    
-    const subtitle = this.add.text(centerX, 220, 'FRUIT RUNNERS', {
+    // Main title text
+    this.gameTitle = this.add.text(centerX, 170, 'SUPER', {
       fontSize: '28px',
-      color: '#FFFF00',
+      color: '#8B4513',
       fontFamily: 'Arial Black',
-      stroke: '#000000',
-      strokeThickness: 3
+      stroke: '#FFFFFF',
+      strokeThickness: 2
     }).setOrigin(0.5);
     
-    // Copyright
-    this.add.text(centerX, 250, '©2024 FRUIT RUNNERS', {
+    const subtitle = this.add.text(centerX, 200, 'FRUIT RUNNERS', {
+      fontSize: '24px',
+      color: '#654321',
+      fontFamily: 'Arial Black',
+      stroke: '#FFFFFF',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    
+    // Copyright with paper background
+    const copyrightPaper = this.add.image(centerX, 240, 'yellow_paper_1');
+    copyrightPaper.setScale(2);
+    
+    this.add.text(centerX, 240, '©2024 FRUIT RUNNERS', {
       fontSize: '12px',
-      color: '#FFFFFF',
+      color: '#654321',
       fontFamily: 'Arial'
     }).setOrigin(0.5);
   }
@@ -231,21 +348,32 @@ export class MenuScene extends Phaser.Scene {
     const centerX = this.cameras.main.width / 2;
     const startY = 350;
     
-    // Create menu options
+    // Create menu options with Wood and Paper UI buttons
     this.menuOptions.forEach((option, index) => {
-      const menuText = this.add.text(centerX, startY + (index * 40), option, {
-        fontSize: '24px',
-        color: '#FFFFFF',
+      const y = startY + (index * 50);
+      
+      // Create button background using Wood and Paper UI
+      const buttonBg = this.add.image(centerX, y, 'yellow_button_1');
+      buttonBg.setScale(3, 2); // Scale to fit text
+      
+      // Create menu text
+      const menuText = this.add.text(centerX, y, option, {
+        fontSize: '18px',
+        color: '#654321',
         fontFamily: 'Arial Black',
-        stroke: '#000000',
-        strokeThickness: 2
+        stroke: '#FFFFFF',
+        strokeThickness: 1
       }).setOrigin(0.5);
       
       this.menuTexts.push(menuText);
+      
+      // Store button background for hover effects
+      (menuText as any).buttonBg = buttonBg;
     });
     
-    // Create cursor (Mario mushroom style)
-    this.menuCursor = this.add.rectangle(centerX - 150, startY, 20, 20, 0xFF6B6B);
+    // Create cursor using a small Wood and Paper UI element
+    this.menuCursor = this.add.image(centerX - 120, startY, 'small_banner_1');
+    this.menuCursor.setScale(1.5);
     this.updateCursorPosition();
   }
 
@@ -253,35 +381,38 @@ export class MenuScene extends Phaser.Scene {
     const centerX = this.cameras.main.width / 2;
     const previewY = this.cameras.main.height - 200; // Position closer to bottom
     
-    // Character preview box
-    const previewBox = this.add.graphics();
-    previewBox.fillStyle(0x000000, 0.7);
-    previewBox.fillRoundedRect(centerX - 100, previewY - 50, 200, 100, 10);
-    previewBox.lineStyle(2, 0xFFFFFF);
-    previewBox.strokeRoundedRect(centerX - 100, previewY - 50, 200, 100, 10);
+    // Character preview using Wood and Paper UI background
+    const previewBg = this.add.image(centerX, previewY, 'yellow_paper_3');
+    previewBg.setScale(4, 3); // Scale to fit character and text
     
     // Create single character sprite that will update
     const characterKey = `${this.selectedCharacter}_idle`;
     if (this.textures.exists(characterKey)) {
-      this.characterPreview = this.add.sprite(centerX, previewY, characterKey);
+      this.characterPreview = this.add.sprite(centerX, previewY - 20, characterKey);
       this.characterPreview.setScale(3); // Make it bigger and centered
     } else {
       // Create placeholder if texture doesn't exist
-      this.characterPreview = this.add.rectangle(centerX, previewY, 32, 32, 0xFF69B4) as any;
+      this.characterPreview = this.add.rectangle(centerX, previewY - 20, 32, 32, 0xFF69B4) as any;
       (this.characterPreview as any).setScale(3);
     }
     
-    // Character name (this will be updated when character changes)
+    // Character name with Wood and Paper UI banner
+    const nameBanner = this.add.image(centerX, previewY + 35, 'small_banner_2');
+    nameBanner.setScale(2);
+    
     this.characterNameText = this.add.text(centerX, previewY + 35, this.characterNames[this.currentCharacterIndex], {
-      fontSize: '16px',
-      color: '#FFFFFF',
+      fontSize: '14px',
+      color: '#654321',
       fontFamily: 'Arial Black'
     }).setOrigin(0.5);
     
-    // Instructions
-    this.add.text(centerX, previewY + 55, 'LEFT/RIGHT: Choose Character', {
+    // Instructions with paper background
+    const instructionsBg = this.add.image(centerX, previewY + 60, 'yellow_paper_2');
+    instructionsBg.setScale(3, 1.5);
+    
+    this.add.text(centerX, previewY + 60, 'LEFT/RIGHT: Choose Character', {
       fontSize: '12px',
-      color: '#FFFF00',
+      color: '#654321',
       fontFamily: 'Arial'
     }).setOrigin(0.5);
   }
@@ -336,7 +467,7 @@ export class MenuScene extends Phaser.Scene {
     if (this.menuCursor) {
       const centerX = this.cameras.main.width / 2;
       const startY = 350;
-      this.menuCursor.setPosition(centerX - 150, startY + (this.currentSelection * 40));
+      this.menuCursor.setPosition(centerX - 120, startY + (this.currentSelection * 50));
     }
   }
 

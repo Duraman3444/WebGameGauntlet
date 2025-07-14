@@ -33,25 +33,122 @@ export class GameScene extends Phaser.Scene {
 
   preload(): void {
     console.log('🎮 GameScene: Starting asset preload...');
-    console.log('🎮 GameScene: Base URL:', this.load.baseURL);
-    console.log('🎮 GameScene: Path:', this.load.path);
     
-    // Set up loading event handlers first
+    // Load Wood and Paper UI assets for HUD
+    this.load.image('yellow_paper_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/1.png');
+    this.load.image('yellow_paper_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/2.png');
+    this.load.image('yellow_paper_3', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Yellow Paper/3.png');
+    this.load.image('small_banner_1', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Small Banner/1.png');
+    this.load.image('small_banner_2', 'assets/sprites/Treasure Hunters/Wood and Paper UI/Sprites/Small Banner/2.png');
+    
+    // Load backgrounds
+    this.load.image('background_blue', AssetPaths.background('Blue'));
+    this.load.image('background_green', AssetPaths.background('Green'));
+    this.load.image('background_pink', AssetPaths.background('Pink'));
+    this.load.image('background_purple', AssetPaths.background('Purple'));
+    this.load.image('background_yellow', AssetPaths.background('Yellow'));
+    
+    // Load seasonal tilesets
+    this.load.spritesheet('grassland_tileset', AssetPaths.seasonalTileset('1 - Grassland'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('autumn_tileset', AssetPaths.seasonalTileset('2 - Autumn Forest'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('tropics_tileset', AssetPaths.seasonalTileset('3 - Tropics'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    this.load.spritesheet('winter_tileset', AssetPaths.seasonalTileset('4 - Winter World'), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+    
+    // Load terrain tileset as fallback
+    this.load.image('terrain_tileset', AssetPaths.terrain('Terrain (16x16).png'));
+    
+    // Load character assets
+    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
+    
+    characters.forEach(character => {
+      const idleKey = `${character}_idle`;
+      const runKey = `${character}_run`;
+      const jumpKey = `${character}_jump`;
+      const fallKey = `${character}_fall`;
+      const hitKey = `${character}_hit`;
+      
+      // Load idle animation
+      this.load.spritesheet(idleKey, AssetPaths.characterSpritesheet(character, 'Idle'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load run animation
+      this.load.spritesheet(runKey, AssetPaths.characterSpritesheet(character, 'Run'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load jump animation
+      this.load.spritesheet(jumpKey, AssetPaths.characterSpritesheet(character, 'Jump'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load fall animation
+      this.load.spritesheet(fallKey, AssetPaths.characterSpritesheet(character, 'Fall'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+      
+      // Load hit animation
+      this.load.spritesheet(hitKey, AssetPaths.characterSpritesheet(character, 'Hit'), {
+        frameWidth: 32,
+        frameHeight: 32
+      });
+    });
+    
+    // Load fruits
+    const fruits = ['apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'];
+    fruits.forEach(fruit => {
+      this.load.image(fruit, AssetPaths.fruit(fruit));
+    });
+    
+    // Load boxes
+    const boxes = ['Box1', 'Box2', 'Box3'];
+    boxes.forEach(box => {
+      this.load.image(box.toLowerCase(), AssetPaths.box(box));
+    });
+    
+    // Load checkpoint
+    this.load.image('checkpoint', AssetPaths.checkpoint());
+    
+    // Load traps
+    this.load.image('spike_idle', AssetPaths.spike());
+    this.load.image('trampoline_idle', AssetPaths.trampoline());
+    this.load.image('fire_off', AssetPaths.fire('off'));
+    this.load.image('fire_on', AssetPaths.fire('on'));
+    this.load.image('saw_on', AssetPaths.saw());
+    this.load.image('falling_platform_on', AssetPaths.fallingPlatform());
+    
+    // Load sound effects
+    this.load.audio('coin_sound', AssetPaths.sound('coin'));
+    this.load.audio('jump_sound', AssetPaths.sound('jump'));
+    this.load.audio('hurt_sound', AssetPaths.sound('hurt'));
+    this.load.audio('explosion_sound', AssetPaths.sound('explosion'));
+    this.load.audio('powerup_sound', AssetPaths.sound('powerup'));
+    this.load.audio('stomp_sound', AssetPaths.sound('stomp'));
+    
+    // Load music
+    this.load.audio('time_for_adventure', AssetPaths.music('time_for_adventure'));
+    
+    // Set up load event handlers
     this.setupLoadEventHandlers();
-    
-    // Load character assets (ensuring they're available in GameScene)
-    this.loadCharacterAssets();
-    
-    // Load fruit assets
-    this.loadFruitAssets();
-    
-    // Load game object assets
-    this.loadGameObjectAssets();
-    
-    // Load background assets
-    this.loadBackgroundAssets();
-    
-    console.log('🎮 GameScene: All asset loads queued, starting load...');
   }
 
   private loadCharacterAssets(): void {
