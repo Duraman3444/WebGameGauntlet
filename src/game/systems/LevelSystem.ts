@@ -559,31 +559,34 @@ export class LevelSystem {
   private createBoxes(): void {
     LEVEL_DATA.platforms.forEach(platform => {
       if (platform.type === 'box') {
-        this.createBox(platform.x, platform.y, 'box1');
+        this.createBox(platform.x, platform.y, platform.width, platform.height);
       }
     });
   }
 
-  private createBox(x: number, y: number, type: string): Phaser.Physics.Arcade.Sprite {
-    console.log(`📦 Creating box: ${type} at (${x}, ${y})`);
+  private createBox(x: number, y: number, width: number, height: number): Phaser.Physics.Arcade.Sprite {
+    console.log(`📦 Creating box at (${x}, ${y}) size ${width}x${height}`);
+    
+    // Use box1 as default texture
+    const boxTexture = 'box1';
     
     // Check if box texture exists
-    if (!this.scene.textures.exists(type)) {
-      console.warn(`❌ Box texture ${type} not found`);
+    if (!this.scene.textures.exists(boxTexture)) {
+      console.warn(`❌ Box texture ${boxTexture} not found`);
     }
     
-    const box = this.boxes.create(x + 16, y + 16, type) as Phaser.Physics.Arcade.Sprite;
+    const box = this.boxes.create(x + width / 2, y + height / 2, boxTexture) as Phaser.Physics.Arcade.Sprite;
 
     // Configure static properties
     box.setOrigin(0.5);
-    box.setDisplaySize(32, 32);
+    box.setDisplaySize(width, height);
     box.refreshBody();
 
     // Custom data for gameplay
-    box.setData('boxType', type);
+    box.setData('boxType', boxTexture);
     box.setData('canBreak', true);
 
-    console.log(`✅ Box created successfully: ${type}`);
+    console.log(`✅ Box created successfully: ${boxTexture}`);
     return box;
   }
 

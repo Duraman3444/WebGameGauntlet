@@ -24,10 +24,181 @@ export class GameScene extends Phaser.Scene {
   private gameStartTime: number = 0;
   private gameTimer!: Phaser.Time.TimerEvent;
   private levelCompleted: boolean = false;
-  private lastCheckpoint: { x: number; y: number } = { x: 100, y: 400 };
+  private lastCheckpoint: { x: number; y: number } = { x: 100, y: 600 };
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  preload(): void {
+    console.log('🎮 GameScene: Starting asset preload...');
+    
+    // Load character assets (ensuring they're available in GameScene)
+    this.loadCharacterAssets();
+    
+    // Load fruit assets
+    this.loadFruitAssets();
+    
+    // Load game object assets
+    this.loadGameObjectAssets();
+    
+    // Load background assets
+    this.loadBackgroundAssets();
+    
+    // Set up loading event handlers
+    this.setupLoadEventHandlers();
+  }
+
+  private loadCharacterAssets(): void {
+    console.log('👤 GameScene: Loading character assets...');
+    
+    const characterData = [
+      { name: 'Pink Man', key: 'pinkman' },
+      { name: 'Mask Dude', key: 'maskdude' },
+      { name: 'Ninja Frog', key: 'ninjafrog' },
+      { name: 'Virtual Guy', key: 'virtualguy' },
+      { name: 'Adventure Hero', key: 'adventurehero' },
+      { name: 'Robot', key: 'robot' },
+      { name: 'Captain Clown Nose', key: 'captainclownnose' },
+      { name: 'King Human', key: 'kinghuman' }
+    ];
+    
+    const animations = [
+      { name: 'Idle', key: 'idle' },
+      { name: 'Run', key: 'run' },
+      { name: 'Jump', key: 'jump' }
+    ];
+    
+    characterData.forEach(character => {
+      animations.forEach(animation => {
+        const rawPath = `assets/sprites/players/Main Characters/${character.name}/${animation.name} (32x32).png`;
+        const encodedPath = encodeURI(rawPath);
+        const assetKey = `${character.key}_${animation.key}`;
+        
+        this.load.image(assetKey, encodedPath);
+      });
+    });
+  }
+
+  private loadFruitAssets(): void {
+    console.log('🍎 GameScene: Loading fruit assets...');
+    
+    const fruits = [
+      { name: 'Apple', key: 'apple' },
+      { name: 'Bananas', key: 'bananas' },
+      { name: 'Cherries', key: 'cherries' },
+      { name: 'Kiwi', key: 'kiwi' },
+      { name: 'Melon', key: 'melon' },
+      { name: 'Orange', key: 'orange' },
+      { name: 'Pineapple', key: 'pineapple' },
+      { name: 'Strawberry', key: 'strawberry' }
+    ];
+    
+    fruits.forEach(fruit => {
+      const rawPath = `assets/sprites/Items/Fruits/${fruit.name}.png`;
+      const encodedPath = encodeURI(rawPath);
+      this.load.image(fruit.key, encodedPath);
+    });
+  }
+
+  private loadGameObjectAssets(): void {
+    console.log('📦 GameScene: Loading game object assets...');
+    
+    // Load box assets
+    const boxes = ['Box1', 'Box2', 'Box3'];
+    boxes.forEach(box => {
+      const rawPath = `assets/sprites/Items/Boxes/${box}/Idle.png`;
+      const encodedPath = encodeURI(rawPath);
+      this.load.image(box.toLowerCase(), encodedPath);
+    });
+    
+    // Load checkpoint assets
+    const checkpointPath = `assets/sprites/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`;
+    const encodedCheckpointPath = encodeURI(checkpointPath);
+    this.load.image('checkpoint', encodedCheckpointPath);
+    
+    // Load trap assets
+    const trapPath = `assets/sprites/Traps/Spikes/Idle.png`;
+    const encodedTrapPath = encodeURI(trapPath);
+    this.load.image('spike', encodedTrapPath);
+    
+    // Load trampoline assets
+    const trampolinePath = `assets/sprites/Traps/Trampoline/Idle.png`;
+    const encodedTrampolinePath = encodeURI(trampolinePath);
+    this.load.image('trampoline', encodedTrampolinePath);
+    
+    // Load terrain tileset
+    const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
+    this.load.image('terrain_tileset', encodeURI(terrainPath));
+  }
+
+  private loadBackgroundAssets(): void {
+    console.log('🌄 GameScene: Loading background assets...');
+    
+    // Load backgrounds
+    const backgrounds = ['Blue', 'Brown', 'Gray', 'Green', 'Pink', 'Purple', 'Yellow'];
+    backgrounds.forEach(bg => {
+      const bgKey = `bg_${bg.toLowerCase()}`;
+      const bgPath = `assets/sprites/Background/${bg}.png`;
+      this.load.image(bgKey, bgPath);
+    });
+    
+    // Load stringstar backgrounds if available
+    try {
+      const stringstarBgs = ['background_0', 'background_1', 'background_2', 'background_3'];
+      stringstarBgs.forEach((bg, index) => {
+        const bgKey = `bg_stringstar_${index}`;
+        const bgPath = `assets/levels/stringstar_fields/${bg}.png`;
+        this.load.image(bgKey, bgPath);
+      });
+    } catch (error) {
+      console.warn('⚠️ Stringstar backgrounds not found, using fallback');
+    }
+  }
+
+  private setupLoadEventHandlers(): void {
+    this.load.on('complete', () => {
+      console.log('🎯 GameScene: Asset loading complete!');
+    });
+
+    this.load.on('loaderror', (file: any) => {
+      console.warn(`❌ GameScene: Failed to load asset: ${file.key}`);
+      // Create placeholder for failed assets
+      this.createAssetPlaceholder(file.key);
+    });
+  }
+
+  private createAssetPlaceholder(key: string): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Different colors for different asset types
+    let fillColor = '#FF69B4'; // Default pink
+    if (key.includes('fruit') || key.includes('apple') || key.includes('banana')) {
+      fillColor = '#FFD700'; // Gold for fruits
+    } else if (key.includes('box')) {
+      fillColor = '#8B4513'; // Brown for boxes
+    } else if (key.includes('checkpoint')) {
+      fillColor = '#00FF00'; // Green for checkpoints
+    } else if (key.includes('spike')) {
+      fillColor = '#FF0000'; // Red for spikes
+    }
+    
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(0, 0, 32, 32);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(2, 2, 28, 28);
+    ctx.fillStyle = fillColor;
+    ctx.fillRect(4, 4, 24, 24);
+    
+    const texture = this.textures.createCanvas(key, 32, 32);
+    if (texture) {
+      const context = texture.getContext();
+      context.drawImage(canvas, 0, 0);
+      texture.refresh();
+    }
   }
 
   create(): void {

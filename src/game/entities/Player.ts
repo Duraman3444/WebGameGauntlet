@@ -130,7 +130,8 @@ export class Player {
     
     // Check if texture exists before creating sprite
     if (!this.scene.textures.exists(initialTexture)) {
-      console.warn(`❌ Texture ${initialTexture} not found, using placeholder`);
+      console.warn(`❌ Texture ${initialTexture} not found, creating placeholder`);
+      this.createCharacterPlaceholder(initialTexture);
     }
     
     this.sprite = this.scene.physics.add.sprite(x, y, initialTexture);
@@ -162,6 +163,35 @@ export class Player {
     body.setCollideWorldBounds(true);
     
     this.setupCollisions();
+  }
+
+  private createCharacterPlaceholder(key: string): void {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Use character-specific color
+    const characterColor = this.characterColors[this.character] || 0xFF69B4;
+    
+    // Convert hex to RGB
+    const r = (characterColor >> 16) & 0xFF;
+    const g = (characterColor >> 8) & 0xFF;
+    const b = characterColor & 0xFF;
+    
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.fillRect(0, 0, 32, 32);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(8, 6, 3, 3); // Left eye
+    ctx.fillRect(21, 6, 3, 3); // Right eye
+    ctx.fillRect(12, 20, 8, 2); // Smile
+    
+    const texture = this.scene.textures.createCanvas(key, 32, 32);
+    if (texture) {
+      const context = texture.getContext();
+      context.drawImage(canvas, 0, 0);
+      texture.refresh();
+    }
   }
 
   private updatePlayerGraphics(): void {
