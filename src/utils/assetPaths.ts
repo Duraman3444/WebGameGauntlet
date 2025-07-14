@@ -45,6 +45,11 @@ export const AssetPaths = {
     if (['slime_green', 'slime_purple', 'knight'].includes(name)) {
       return `${ASSET_ROOTS.SPRITES}/brackeys_platformer_assets/sprites/${name}.png`;
     }
+    // Handle new tile-based enemies
+    if (['flying_eye', 'goblin', 'mushroom', 'skeleton'].includes(name)) {
+      const folderName = name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return `${ASSET_ROOTS.SPRITES}/enemies/${folderName}/Attack3.png`;
+    }
     return `${ASSET_ROOTS.SPRITES}/enemies/${name}.png`;
   },
   

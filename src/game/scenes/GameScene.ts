@@ -131,6 +131,15 @@ export class GameScene extends Phaser.Scene {
     const encodedCheckpointPath = encodeURI(checkpointPath);
     this.load.image('checkpoint', encodedCheckpointPath);
     
+    // Load enemy assets
+    const enemies = ['flying_eye', 'goblin', 'mushroom', 'skeleton'];
+    enemies.forEach(enemy => {
+      const rawPath = AssetPaths.enemy(enemy);
+      const encodedPath = encodeURI(rawPath);
+      this.load.image(enemy, encodedPath);
+      console.log(`👹 Loading enemy: ${enemy} from ${encodedPath}`);
+    });
+    
     // ---- Trap textures (match keys used in Trap.ts) ----
     // Spikes (idle)
     const spikePath = AssetPaths.spike();

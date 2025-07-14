@@ -15,7 +15,7 @@ export class StageEditorScene extends Phaser.Scene {
     // Boxes
     'box1', 'box2', 'box3',
     // Enemies
-    'slime_green', 'slime_purple', 'knight',
+    'flying_eye', 'goblin', 'mushroom', 'skeleton',
     // Fruits
     'apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry',
     // Checkpoints
@@ -48,9 +48,10 @@ export class StageEditorScene extends Phaser.Scene {
       { key: 'box2', path: AssetPaths.box('Box2') },
       { key: 'box3', path: AssetPaths.box('Box3') },
       // Enemies
-      { key: 'slime_green', path: AssetPaths.enemy('slime_green') },
-      { key: 'slime_purple', path: AssetPaths.enemy('slime_purple') },
-      { key: 'knight', path: AssetPaths.enemy('knight') },
+      { key: 'flying_eye', path: AssetPaths.enemy('flying_eye') },
+      { key: 'goblin', path: AssetPaths.enemy('goblin') },
+      { key: 'mushroom', path: AssetPaths.enemy('mushroom') },
+      { key: 'skeleton', path: AssetPaths.enemy('skeleton') },
       // Fruits
       { key: 'apple', path: AssetPaths.fruit('Apple') },
       { key: 'bananas', path: AssetPaths.fruit('Bananas') },

@@ -75,9 +75,10 @@ export const GAME_CONSTANTS = {
 
   // Enemy types
   ENEMY_TYPES: {
-    GOOMBA: 'goomba',
-    KOOPA: 'koopa',
-    PIRANHA: 'piranha'
+    FLYING_EYE: 'flying_eye',
+    GOBLIN: 'goblin',
+    MUSHROOM: 'mushroom',
+    SKELETON: 'skeleton'
   },
   
   // Trap settings
@@ -559,9 +560,10 @@ export const LEVEL_DATA = {
   ],
   // Enemies for stage 1
   enemies: [
-    { x: 640, y: 656, type: 'goomba' },
-    { x: 1280, y: 656, type: 'goomba' },
-    { x: 2000, y: 656, type: 'koopa' }
+    { x: 640, y: 656, type: 'flying_eye' },
+    { x: 1280, y: 656, type: 'goblin' },
+    { x: 2000, y: 656, type: 'mushroom' },
+    { x: 2600, y: 656, type: 'skeleton' }
   ],
   
   // Checkpoints (strategic save points like Mario 1-1)
