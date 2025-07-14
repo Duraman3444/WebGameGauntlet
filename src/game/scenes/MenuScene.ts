@@ -20,9 +20,6 @@ export class MenuScene extends Phaser.Scene {
   preload(): void {
     console.log('🎮 MenuScene: Starting asset preload...');
     
-    // Verify assets exist before attempting to load
-    this.verifyAssetsExist();
-    
     // Show loading text
     this.loadingText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
       'Loading...', {
@@ -33,14 +30,14 @@ export class MenuScene extends Phaser.Scene {
     // Set up detailed load event tracking
     this.setupLoadEventTracking();
     
-    // Create placeholder graphics for missing assets
-    this.createPlaceholderAssets();
-    
-    // Try to load character assets (with fallback to placeholders)
+    // Try to load character assets first (real assets)
     this.loadCharacterAssets();
     
-    // Load terrain and other assets
+    // Load other game assets
     this.loadGameAssets();
+    
+    // Start the load process
+    this.load.start();
   }
 
   private async verifyAssetsExist(): Promise<void> {
@@ -64,33 +61,19 @@ export class MenuScene extends Phaser.Scene {
     this.load.on('filecomplete', (key: string, type: string) => {
       console.log(`✅ Asset loaded successfully: ${key} (type: ${type})`);
       this.loadedAssets.push(key);
-      
-      // Debug spritesheet loading
-      if (type === 'spritesheet') {
-        const texture = this.textures.get(key);
-        if (texture) {
-          console.log(`  📊 Spritesheet ${key}: ${texture.frameTotal} frames`);
-          // Log frame details
-          if (texture.frameTotal > 1) {
-            console.log(`  🎯 Spritesheet ${key} loaded successfully with ${texture.frameTotal} frames`);
-          } else {
-            console.warn(`  ⚠️  Spritesheet ${key} loaded but has only ${texture.frameTotal} frames - may be loaded as single image`);
-          }
-        } else {
-          console.warn(`  ❌ Spritesheet ${key}: texture not found after loading`);
-        }
-      }
     });
 
     this.load.on('loaderror', (file: any) => {
-      console.error(`❌ Asset loading failed: ${file.key} (${file.src})`);
+      console.warn(`❌ Failed to load asset: ${file.key} (${file.src})`);
       this.failedAssets.push(file.key);
       
-      // If it's a character spritesheet that failed, try loading as single image
-      if (file.key.includes('_') && (file.key.includes('pinkman') || file.key.includes('maskdude') || file.key.includes('ninjafrog') || file.key.includes('virtualguy') || file.key.includes('kinghuman') || file.key.includes('robot') || file.key.includes('adventurehero'))) {
-        console.log(`  🔄 Attempting to load ${file.key} as single image instead of spritesheet`);
-        // Try to load as single image
-        this.load.image(file.key, file.src);
+      // Create placeholder for failed character assets
+      if (file.key.includes('_')) {
+        const [character, animation] = file.key.split('_');
+        if (['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'kinghuman', 'robot', 'adventurehero'].includes(character)) {
+          console.log(`🎨 Creating placeholder for failed character asset: ${file.key}`);
+          this.createCharacterPlaceholder(file.key, character, animation);
+        }
       }
     });
 
@@ -108,111 +91,21 @@ export class MenuScene extends Phaser.Scene {
       console.log(`❌ Failed to load: ${this.failedAssets.length} assets`);
       console.log(`📋 Loaded assets:`, this.loadedAssets);
       if (this.failedAssets.length > 0) {
-        console.log(`📋 Failed assets:`, this.failedAssets);
+        console.log(`❌ Failed assets:`, this.failedAssets);
       }
       
-      // Create placeholder assets for any that failed to load
-      this.createPlaceholderAssets();
+      // Clean up loading text
+      if (this.loadingText) {
+        this.loadingText.destroy();
+      }
       
-      this.assetsLoaded = true;
-      this.loadingText.destroy();
-
-      // Generate Phaser animations now that all spritesheets are available
-      Player.createAnimations(this);
-
-      this.createMainMenu();
-    });
-  }
-
-  private createPlaceholderAssets(): void {
-    // Create placeholder spritesheets for characters
-    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'kinghuman', 'robot', 'adventurehero'];
-    const animations = ['idle', 'run', 'jump', 'fall', 'double_jump', 'wall_jump', 'hit'];
-    
-    characters.forEach((character, index) => {
-      const colors = [
-        '#FF69B4', // Pink for pinkman
-        '#8A2BE2', // Blue violet for maskdude
-        '#00FF00', // Green for ninjafrog
-        '#00BFFF', // Deep sky blue for virtualguy
-        '#FFD700', // Gold for kinghuman
-        '#C0C0C0', // Silver for robot
-        '#8B4513'  // Saddle brown for adventurehero
-      ];
+      // Create animations for all loaded characters
+      this.createCharacterAnimations();
       
-      animations.forEach(animation => {
-        const key = `${character}_${animation}`;
-        
-        // Skip if the asset was loaded successfully
-        if (this.textures.exists(key)) {
-          return;
-        }
-        
-        console.log(`🎨 Creating placeholder spritesheet for ${key}`);
-        
-        // Create a proper spritesheet texture instead of basic canvas
-        const frameWidth = 32;
-        const frameHeight = 32;
-        const frameCount = 1; // Single frame for now
-        
-        // Create canvas for spritesheet
-        const canvas = document.createElement('canvas');
-        canvas.width = frameWidth * frameCount;
-        canvas.height = frameHeight;
-        const ctx = canvas.getContext('2d')!;
-        
-        // Create a character-like placeholder sprite
-        this.drawCharacterPlaceholder(ctx, colors[index], animation, frameWidth, frameHeight);
-        
-        // Convert canvas to texture and add to Phaser
-        const texture = this.textures.createCanvas(key, frameWidth, frameHeight);
-        if (texture) {
-          const context = texture.getContext();
-          context.drawImage(canvas, 0, 0);
-          texture.refresh();
-        }
+      // Auto-transition to game scene
+      this.time.delayedCall(1000, () => {
+        this.scene.start('GameScene');
       });
-    });
-    
-    // Create placeholder terrain if needed
-    if (!this.textures.exists('terrain_tileset')) {
-      const terrainGraphics = this.add.graphics();
-      terrainGraphics.fillStyle(0x8B4513);
-      terrainGraphics.fillRect(0, 0, 16, 16);
-      terrainGraphics.generateTexture('terrain_tileset', 16, 16);
-      terrainGraphics.destroy();
-    }
-    
-    // Create placeholder fruit assets if needed
-    const fruits = ['apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'];
-    const fruitColors = [0xFF0000, 0xFFFF00, 0xFF1493, 0x8FBC8F, 0x90EE90, 0xFFA500, 0xFFD700, 0xFF69B4];
-    
-    fruits.forEach((fruit, index) => {
-      if (!this.textures.exists(fruit)) {
-        const fruitGraphics = this.add.graphics();
-        fruitGraphics.fillStyle(fruitColors[index]);
-        fruitGraphics.fillCircle(12, 12, 12);
-        fruitGraphics.fillStyle(0xFFFFFF, 0.3);
-        fruitGraphics.fillCircle(8, 8, 4);
-        fruitGraphics.generateTexture(fruit, 24, 24);
-        fruitGraphics.destroy();
-      }
-    });
-    
-    // Create placeholder box assets if needed
-    const boxes = ['box1', 'box2', 'box3'];
-    const boxColors = [0xD2691E, 0xCD853F, 0xA0522D];
-    
-    boxes.forEach((box, index) => {
-      if (!this.textures.exists(box)) {
-        const boxGraphics = this.add.graphics();
-        boxGraphics.fillStyle(boxColors[index]);
-        boxGraphics.fillRect(0, 0, 32, 32);
-        boxGraphics.lineStyle(2, 0x000000, 0.5);
-        boxGraphics.strokeRect(0, 0, 32, 32);
-        boxGraphics.generateTexture(box, 32, 32);
-        boxGraphics.destroy();
-      }
     });
   }
 
@@ -315,13 +208,8 @@ export class MenuScene extends Phaser.Scene {
         console.log(`    🔗 Encoded path: ${encodedPath}`);
         console.log(`    🔑 Asset key: ${assetKey}`);
         
-        // Load as spritesheet with proper frame configuration
-        this.load.spritesheet(assetKey, encodedPath, {
-          frameWidth: 32,
-          frameHeight: 32,
-          startFrame: 0,
-          endFrame: -1 // Load all frames
-        });
+        // Load as individual image files, not spritesheets
+        this.load.image(assetKey, encodedPath);
       });
     });
   }
@@ -696,5 +584,67 @@ export class MenuScene extends Phaser.Scene {
       (this.startButton as Phaser.GameObjects.Rectangle).setFillStyle(0x32CD32);
     }
     this.startButton.setScale(this.startButton.scaleX / 1.05);
+  }
+
+  private createCharacterPlaceholder(key: string, character: string, animation: string): void {
+    const colors = {
+      'pinkman': '#FF69B4',
+      'maskdude': '#8A2BE2', 
+      'ninjafrog': '#00FF00',
+      'virtualguy': '#00BFFF',
+      'kinghuman': '#FFD700',
+      'robot': '#C0C0C0',
+      'adventurehero': '#8B4513'
+    };
+    
+    const frameWidth = 32;
+    const frameHeight = 32;
+    
+    // Create canvas for placeholder
+    const canvas = document.createElement('canvas');
+    canvas.width = frameWidth;
+    canvas.height = frameHeight;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Create a character-like placeholder sprite
+    this.drawCharacterPlaceholder(ctx, colors[character as keyof typeof colors] || '#FFFFFF', animation, frameWidth, frameHeight);
+    
+    // Convert canvas to texture and add to Phaser
+    const texture = this.textures.createCanvas(key, frameWidth, frameHeight);
+    if (texture) {
+      const context = texture.getContext();
+      context.drawImage(canvas, 0, 0);
+      texture.refresh();
+    }
+  }
+
+  private createCharacterAnimations(): void {
+    console.log('🎭 Creating character animations...');
+    
+    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'kinghuman', 'robot', 'adventurehero'];
+    const animations = ['idle', 'run', 'jump', 'fall', 'double_jump', 'wall_jump', 'hit'];
+    
+    characters.forEach(character => {
+      console.log(`🎭 Creating animations for character: ${character}`);
+      
+      animations.forEach(animation => {
+        const animKey = `${character}_${animation}`;
+        const textureKey = `${character}_${animation}`;
+        
+        // Only create animation if texture exists
+        if (this.textures.exists(textureKey)) {
+          // Create simple single-frame animation
+          if (!this.anims.exists(animKey)) {
+            this.anims.create({
+              key: animKey,
+              frames: [{ key: textureKey, frame: 0 }],
+              frameRate: 10,
+              repeat: animation === 'idle' || animation === 'run' ? -1 : 0
+            });
+            console.log(`  📸 Created animation: ${animKey}`);
+          }
+        }
+      });
+    });
   }
 } 
