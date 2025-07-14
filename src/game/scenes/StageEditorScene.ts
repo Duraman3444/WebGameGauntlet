@@ -13,8 +13,8 @@ export class StageEditorScene extends Phaser.Scene {
     'spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb',
     // Boxes
     'box1', 'box2', 'box3',
-    // Enemies (generated icons)
-    'enemy_goomba', 'enemy_koopa', 'enemy_piranha'
+    // Enemies from assets
+    'slime_green', 'slime_purple', 'knight'
   ];
   private currentAssetIndex: number = 0;
   private placedObjects: PlacedObject[] = [];
@@ -38,56 +38,15 @@ export class StageEditorScene extends Phaser.Scene {
       { key: 'box1', path: 'assets/sprites/Items/Boxes/Box1/Idle.png' },
       { key: 'box2', path: 'assets/sprites/Items/Boxes/Box2/Idle.png' },
       { key: 'box3', path: 'assets/sprites/Items/Boxes/Box3/Idle.png' },
-      // Enemy icons generated via graphics
-      {
-        key: 'enemy_goomba',
-        generate: () => {
-          const g = this.add.graphics();
-          const s = 16;
-          g.fillStyle(0x8B4513).fillRect(0, s * 0.4, s, s * 0.6);
-          g.fillStyle(0xA0522D).fillCircle(s / 2, s * 0.3, s * 0.3);
-          g.fillStyle(0x000000);
-          g.fillCircle(s * 0.35, s * 0.25, 2);
-          g.fillCircle(s * 0.65, s * 0.25, 2);
-          g.generateTexture('enemy_goomba', s, s);
-          g.destroy();
-        }
-      },
-      {
-        key: 'enemy_koopa',
-        generate: () => {
-          const g = this.add.graphics();
-          const s = 16;
-          g.fillStyle(0x32CD32).fillRect(s * 0.1, s * 0.3, s * 0.8, s * 0.7);
-          g.fillStyle(0xFFFF00).fillCircle(s / 2, s * 0.2, s * 0.15);
-          g.fillStyle(0x000000).fillCircle(s * 0.45, s * 0.18, 1.5);
-          g.fillCircle(s * 0.55, s * 0.18, 1.5);
-          g.generateTexture('enemy_koopa', s, s);
-          g.destroy();
-        }
-      },
-      {
-        key: 'enemy_piranha',
-        generate: () => {
-          const g = this.add.graphics();
-          const s = 16;
-          g.fillStyle(0x32CD32).fillRect(s * 0.2, s * 0.5, s * 0.6, s * 0.5);
-          g.fillStyle(0xFF0000).fillCircle(s / 2, s * 0.3, s * 0.25);
-          g.fillStyle(0x000000).fillRect(s * 0.35, s * 0.3, s * 0.3, s * 0.05);
-          g.generateTexture('enemy_piranha', s, s);
-          g.destroy();
-        }
-      }
+      // Enemy sprites
+      { key: 'slime_green', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_green.png' },
+      { key: 'slime_purple', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_purple.png' },
+      { key: 'knight', path: 'assets/sprites/brackeys_platformer_assets/sprites/knight.png' }
     ];
 
     assetDefs.forEach(def => {
-      if (def.path) {
-        if (!this.textures.exists(def.key)) {
-          this.load.image(def.key, encodeURI(def.path));
-        }
-      } else if (def.generate) {
-        // Generate after load completes
-        this.textures.exists(def.key) || def.generate();
+      if (!this.textures.exists(def.key) && def.path) {
+        this.load.image(def.key, encodeURI(def.path));
       }
     });
   }
