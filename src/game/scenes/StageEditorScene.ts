@@ -11,6 +11,8 @@ export class StageEditorScene extends Phaser.Scene {
   private assetKeys: string[] = ['spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb'];
   private currentAssetIndex: number = 0;
   private placedObjects: PlacedObject[] = [];
+  private placedSprites: Phaser.GameObjects.Sprite[] = [];
+  private paletteSprites: Phaser.GameObjects.Sprite[] = [];
   private infoText!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -35,8 +37,14 @@ export class StageEditorScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Disable context menu so right-click works for deletion
+    (this.input.mouse as any)?.disableContextMenu?.();
+
     // Draw grid for clarity
     this.drawGrid();
+
+    // Draw palette UI (fixed to camera)
+    this.createPalette();
 
     // Info text
     this.infoText = this.add.text(16, 16, 'Asset: ' + this.assetKeys[this.currentAssetIndex], {
@@ -51,11 +59,29 @@ export class StageEditorScene extends Phaser.Scene {
       const gridX = Math.floor(pointer.worldX / GAME_CONSTANTS.TILE_SIZE) * GAME_CONSTANTS.TILE_SIZE;
       const gridY = Math.floor(pointer.worldY / GAME_CONSTANTS.TILE_SIZE) * GAME_CONSTANTS.TILE_SIZE;
 
-      const key = this.assetKeys[this.currentAssetIndex];
-      const sprite = this.add.sprite(gridX + GAME_CONSTANTS.TILE_SIZE / 2, gridY + GAME_CONSTANTS.TILE_SIZE / 2, key);
-      sprite.setInteractive();
+      // Right-click deletes object if present
+      if (pointer.rightButtonDown()) {
+        const idx = this.placedObjects.findIndex(obj => obj.x === gridX && obj.y === gridY);
+        if (idx !== -1) {
+          // Destroy sprite and remove data
+          this.placedSprites[idx].destroy();
+          this.placedSprites.splice(idx, 1);
+          this.placedObjects.splice(idx, 1);
+        }
+        return;
+      }
 
+      const key = this.assetKeys[this.currentAssetIndex];
+
+      // Prevent duplicate placement at same tile
+      if (this.placedObjects.some(o => o.x === gridX && o.y === gridY)) {
+        return;
+      }
+
+      const sprite = this.add.sprite(gridX + GAME_CONSTANTS.TILE_SIZE / 2, gridY + GAME_CONSTANTS.TILE_SIZE / 2, key);
+      sprite.setOrigin(0.5);
       this.placedObjects.push({ x: gridX, y: gridY, assetKey: key });
+      this.placedSprites.push(sprite);
     });
 
     // Keyboard controls
@@ -81,8 +107,37 @@ export class StageEditorScene extends Phaser.Scene {
     });
   }
 
+  private createPalette(): void {
+    const startX = 16;
+    const startY = 60;
+    const iconSize = 28;
+
+    this.assetKeys.forEach((key, index) => {
+      const sprite = this.add.sprite(startX + index * (iconSize + 8), startY, key).setScrollFactor(0);
+      sprite.setDisplaySize(iconSize, iconSize);
+      sprite.setInteractive({ useHandCursor: true });
+
+      sprite.on('pointerdown', () => {
+        this.currentAssetIndex = index;
+        this.updateInfo();
+        this.highlightPalette();
+      });
+
+      this.paletteSprites.push(sprite);
+    });
+
+    this.highlightPalette();
+  }
+
+  private highlightPalette(): void {
+    this.paletteSprites.forEach((sprite, idx) => {
+      sprite.setTint(idx === this.currentAssetIndex ? 0xffff00 : 0xffffff);
+    });
+  }
+
   private updateInfo(): void {
     this.infoText.setText('Asset: ' + this.assetKeys[this.currentAssetIndex]);
+    this.highlightPalette();
   }
 
   private drawGrid(): void {
