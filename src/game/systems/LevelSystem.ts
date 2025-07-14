@@ -178,7 +178,8 @@ export class LevelSystem {
       GAME_CONSTANTS.WORLD_HEIGHT * 0.6,
       GAME_CONSTANTS.WORLD_WIDTH,
       GAME_CONSTANTS.WORLD_HEIGHT * 0.4,
-      actualTilesetKey
+      actualTilesetKey,
+      0 // ensure only the first tile frame is used repeatedly
     ).setOrigin(0, 0);
     
     this.background.setDepth(-5);
@@ -532,28 +533,52 @@ export class LevelSystem {
     });
   }
 
-  private createPlatform(x: number, y: number, width: number, height: number, type: string): Phaser.Physics.Arcade.Sprite {
+  private createPlatform(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    type: string
+  ): Phaser.Physics.Arcade.Sprite | null {
+    // Boxes are handled separately to avoid duplicate sprites / physics bodies
+    if (type === 'box') {
+      return null; // Skip box handling here
+    }
+
     console.log(`🏗️  Creating platform: ${type} at (${x}, ${y}) size ${width}x${height}`);
+
     // Use static bodies so they never respond to gravity or impulses
     const targetGroup = type === 'wall' ? this.walls : this.platforms;
-    
+
     // Use themed tileset for platforms
-    const tilesetKey = this.scene.textures.exists(this.currentTheme.tilesetKey) ? 
-      this.currentTheme.tilesetKey : 'terrain_tileset';
-      
+    const tilesetKey = this.scene.textures.exists(this.currentTheme.tilesetKey)
+      ? this.currentTheme.tilesetKey
+      : 'terrain_tileset';
+
     if (!this.scene.textures.exists(tilesetKey)) {
       console.warn(`❌ Platform texture ${tilesetKey} not found for platform creation`);
     }
-    
-    const platform = targetGroup.create(x + width / 2, y + height / 2, tilesetKey) as Phaser.Physics.Arcade.Sprite;
 
-    // Resize sprite and sync static body
-    platform.setOrigin(0.5);
-    platform.setDisplaySize(width, height);
-    platform.refreshBody();
+    // ------------------------------------------------------------------
+    // NEW IMPLEMENTATION: create a TileSprite so we repeat the tile texture
+    // across the requested platform area instead of stretching the entire
+    // tileset. This removes the "half-full" tile artefacts and jagged edges.
+    // ------------------------------------------------------------------
+    const tileSprite = this.scene.add.tileSprite(
+      x + width / 2,
+      y + height / 2,
+      width,
+      height,
+      tilesetKey,
+      0 // use the first frame of the tileset
+    ).setOrigin(0.5);
+
+    // Convert to a static physics body
+    this.scene.physics.add.existing(tileSprite, true);
+    targetGroup.add(tileSprite as unknown as Phaser.GameObjects.GameObject & { body: Phaser.Physics.Arcade.Body });
 
     console.log(`✅ Platform created successfully: ${type}`);
-    return platform;
+    return tileSprite as unknown as Phaser.Physics.Arcade.Sprite;
   }
 
   private createBoxes(): void {

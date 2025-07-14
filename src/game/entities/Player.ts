@@ -82,14 +82,9 @@ export class Player {
         const totalFrames = texture.frameTotal - 1;
         
         if (totalFrames <= 0) {
-          // Single image - create a single-frame animation
-          console.log(`  📸 Creating single-frame animation ${sheetKey}`);
-          scene.anims.create({
-            key: sheetKey,
-            frames: [{ key: sheetKey, frame: 0 }],
-            frameRate: 8,
-            repeat: ['idle', 'run', 'fall'].includes(animation) ? -1 : 0
-          });
+          // Single-frame textures will be swapped manually (no animation needed)
+          console.log(`  ⏭️  Skipping animation creation for single-frame texture ${sheetKey}`);
+          return;
         } else {
           // Multi-frame spritesheet - create normal animation
           console.log(`  ✅ Creating animation ${sheetKey} with ${totalFrames + 1} frames`);

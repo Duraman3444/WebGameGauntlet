@@ -113,9 +113,12 @@ export class MenuScene extends Phaser.Scene {
       this.load.image(bgKey, bgPath);
     });
     
-    // Load terrain
+    // Load terrain tileset as spritesheet
     const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
-    this.load.image('terrain_tileset', encodeURI(terrainPath));
+    this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
   }
 
   private createTitleScreen(): void {

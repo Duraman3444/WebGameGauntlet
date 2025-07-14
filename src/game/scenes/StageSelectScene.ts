@@ -54,9 +54,12 @@ export class StageSelectScene extends Phaser.Scene {
       this.load.image(key, encodeURI(path));
     });
     
-    // Load terrain tileset
+    // Load terrain tileset as spritesheet for accurate previews
     const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
-    this.load.image('terrain_tileset', encodeURI(terrainPath));
+    this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
   }
 
   create(): void {

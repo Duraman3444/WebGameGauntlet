@@ -63,14 +63,21 @@ export class GameScene extends Phaser.Scene {
       { name: 'Virtual Guy', key: 'virtualguy' },
       { name: 'Adventure Hero', key: 'adventurehero' },
       { name: 'Robot', key: 'robot' },
-      { name: 'Captain Clown Nose', key: 'captainclownnose' },
       { name: 'King Human', key: 'kinghuman' }
     ];
     
+    // Include all animation states that Player.createAnimations expects so we
+    // avoid runtime warnings / errors when those animations are played. Each
+    // object maps the filename segment ("name") to the texture key suffix
+    // ("key") that Player.ts uses.
     const animations = [
       { name: 'Idle', key: 'idle' },
       { name: 'Run', key: 'run' },
-      { name: 'Jump', key: 'jump' }
+      { name: 'Jump', key: 'jump' },
+      { name: 'Fall', key: 'fall' },
+      { name: 'Double Jump', key: 'double_jump' },
+      { name: 'Wall Jump', key: 'wall_jump' },
+      { name: 'Hit', key: 'hit' }
     ];
     
     characterData.forEach(character => {
@@ -123,19 +130,43 @@ export class GameScene extends Phaser.Scene {
     const encodedCheckpointPath = encodeURI(checkpointPath);
     this.load.image('checkpoint', encodedCheckpointPath);
     
-    // Load trap assets
-    const trapPath = `assets/sprites/Traps/Spikes/Idle.png`;
-    const encodedTrapPath = encodeURI(trapPath);
-    this.load.image('spike', encodedTrapPath);
-    
-    // Load trampoline assets
+    // ---- Trap textures (match keys used in Trap.ts) ----
+    // Spikes (idle)
+    const spikePath = `assets/sprites/Traps/Spikes/Idle.png`;
+    this.load.image('spike_idle', encodeURI(spikePath));
+
+    // Trampoline (idle)
     const trampolinePath = `assets/sprites/Traps/Trampoline/Idle.png`;
-    const encodedTrampolinePath = encodeURI(trampolinePath);
-    this.load.image('trampoline', encodedTrampolinePath);
-    
+    this.load.image('trampoline_idle', encodeURI(trampolinePath));
+
+    // Fire (off / on)
+    const fireOffPath = `assets/sprites/Traps/Fire/Off.png`;
+    const fireOnPath = `assets/sprites/Traps/Fire/On (16x32).png`;
+    this.load.image('fire_off', encodeURI(fireOffPath));
+    this.load.image('fire_on', encodeURI(fireOnPath));
+
+    // Saw (on)
+    const sawOnPath = `assets/sprites/Traps/Saw/On (38x38).png`;
+    this.load.image('saw_on', encodeURI(sawOnPath));
+
+    // Falling platform (on)
+    const fpOnPath = `assets/sprites/Traps/Falling Platforms/On (32x10).png`;
+    this.load.image('falling_platform_on', encodeURI(fpOnPath));
+
+    // Keep basic spike & trampoline keys for backward compatibility
+    this.load.image('spike', encodeURI(spikePath));
+    this.load.image('trampoline', encodeURI(trampolinePath));
+
     // Load terrain tileset
     const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
-    this.load.image('terrain_tileset', encodeURI(terrainPath));
+    this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
+      frameWidth: 16,
+      frameHeight: 16
+    });
+
+    // ---- Goal texture (reuse checkpoint flag) ----
+    const goalPath = `assets/sprites/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`;
+    this.load.image('goal', encodeURI(goalPath));
   }
 
   private loadBackgroundAssets(): void {
@@ -151,7 +182,7 @@ export class GameScene extends Phaser.Scene {
     
     // Load stringstar backgrounds if available
     try {
-      const stringstarBgs = ['background_0', 'background_1', 'background_2', 'background_3'];
+      const stringstarBgs = ['background_0', 'background_1', 'background_2'];
       stringstarBgs.forEach((bg, index) => {
         const bgKey = `bg_stringstar_${index}`;
         const bgPath = `assets/levels/stringstar_fields/${bg}.png`;
@@ -193,7 +224,7 @@ export class GameScene extends Phaser.Scene {
     });
     
     // Check characters
-    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'captainclownnose', 'kinghuman'];
+    const characters = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'adventurehero', 'robot', 'kinghuman'];
     characters.forEach(character => {
       const idleKey = `${character}_idle`;
       if (this.textures.exists(idleKey)) {
