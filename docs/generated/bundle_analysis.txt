@@ -1,0 +1,2 @@
+Bundle analysis would run here in a properly configured environment
+Run 'npm run build' manually for detailed analysis

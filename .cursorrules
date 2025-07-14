@@ -1,0 +1,25 @@
+# .cursorrules
+- This is a React web app project using Vite
+- Use TypeScript for all files
+- Use Tailwind CSS for styling
+- Use Zustand for state management
+- Use React Query for server state management
+- Follow React web development best practices and performance guidelines
+- Use functional components with hooks
+- Prefer const assertions and proper typing
+- Keep components in src/components/ directory
+- Keep pages in src/pages/ directory
+- Keep stores in src/stores/ directory
+- Keep API calls in src/api/ directory
+- Use absolute imports with path mapping
+- Follow responsive design principles (mobile-first)
+- Handle accessibility properly with ARIA attributes and semantic HTML
+- Use React Router for navigation
+- Implement proper loading states and error boundaries
+- Optimize for web performance (code splitting, lazy loading)
+- Use modern web standards and best practices
+- Structure files: exported component, hooks, helpers, types
+- Make everything modular - each feature should be self-contained with its own components, hooks, and utilities
+- Create a new branch for every feature, bug fix, or significant change (e.g., feature/user-auth, fix/navigation-bug)
+- Keep features isolated and avoid cross-feature dependencies when possible
+- Don't overengineer solutions - keep it simple
