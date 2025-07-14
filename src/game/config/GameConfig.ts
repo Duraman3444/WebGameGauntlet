@@ -68,6 +68,17 @@ export const GAME_CONSTANTS = {
   // Collectibles
   FRUIT_VALUE: 100,
   BONUS_FRUIT_VALUE: 500,
+
+  // Enemy settings
+  ENEMY_SPEED: 60,
+  ENEMY_BOUNCE: 0.1,
+
+  // Enemy types
+  ENEMY_TYPES: {
+    GOOMBA: 'goomba',
+    KOOPA: 'koopa',
+    PIRANHA: 'piranha'
+  },
   
   // Trap settings
   SPIKE_DAMAGE: 50,
@@ -545,6 +556,12 @@ export const LEVEL_DATA = {
     { x: 3700, y: 594, type: 'bananas' },
     { x: 3800, y: 594, type: 'cherries' },
     { x: 3900, y: 594, type: 'kiwi' }
+  ],
+  // Enemies for stage 1
+  enemies: [
+    { x: 640, y: 656, type: 'goomba' },
+    { x: 1280, y: 656, type: 'goomba' },
+    { x: 2000, y: 656, type: 'koopa' }
   ],
   
   // Checkpoints (strategic save points like Mario 1-1)

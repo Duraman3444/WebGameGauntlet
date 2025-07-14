@@ -402,6 +402,12 @@ export class GameScene extends Phaser.Scene {
         (playerSprite, goal) => this.handleGoalReached(player), 
         undefined, this);
     });
+
+    // Player vs traps handled in LevelSystem checkTrapCollisions
+    // Player vs enemies
+    this.physics.add.collider(this.localPlayer.sprite, this.levelSystem.getEnemies(), () => {
+      this.localPlayer.takeDamage();
+    });
   }
 
   private handleFruitCollection(player: Player, fruit: Phaser.Physics.Arcade.Sprite): void {

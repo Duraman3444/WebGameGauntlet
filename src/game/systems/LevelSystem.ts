@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_CONSTANTS, COLORS, LEVEL_DATA, LEVEL_THEMES } from '../config/GameConfig';
 import { Trap } from '../entities/Trap';
+import { Enemy } from '../entities/Enemy';
 
 export class LevelSystem {
   private scene: Phaser.Scene;
@@ -10,6 +11,8 @@ export class LevelSystem {
   private fruits!: Phaser.Physics.Arcade.Group;
   private checkpoints!: Phaser.Physics.Arcade.Group;
   private traps: Map<string, Trap> = new Map();
+  private enemies: Enemy[] = [];
+  private enemiesGroup!: Phaser.Physics.Arcade.Group;
   private goal!: Phaser.Physics.Arcade.Sprite;
   private background!: Phaser.GameObjects.TileSprite;
   private currentTheme: any;
@@ -83,12 +86,14 @@ export class LevelSystem {
     this.boxes = this.scene.physics.add.staticGroup();
     this.fruits = this.scene.physics.add.group();
     this.checkpoints = this.scene.physics.add.group();
+    this.enemiesGroup = this.scene.physics.add.group();
     
     // Create level elements
     this.createPlatforms();
     this.createTraps();
     this.createBoxes();
     this.createFruits();
+    this.createEnemies();
     this.createCheckpoints();
     this.createGoal();
     
@@ -652,6 +657,19 @@ export class LevelSystem {
     return fruit;
   }
 
+  private createEnemies(): void {
+    LEVEL_DATA.enemies?.forEach(e => {
+      this.createEnemy(e.x, e.y, e.type);
+    });
+  }
+
+  private createEnemy(x: number, y: number, type: string): Enemy {
+    const enemy = new Enemy(this.scene, x, y, type);
+    this.enemies.push(enemy);
+    this.enemiesGroup.add(enemy.sprite);
+    return enemy;
+  }
+
   private createCheckpoints(): void {
     LEVEL_DATA.checkpoints.forEach(checkpoint => {
       this.createCheckpoint(checkpoint.x, checkpoint.y);
@@ -781,15 +799,23 @@ export class LevelSystem {
     return this.traps;
   }
 
+  public getEnemies(): Phaser.Physics.Arcade.Group {
+    return this.enemiesGroup;
+  }
+
   public getGoal(): Phaser.Physics.Arcade.Sprite {
     return this.goal;
   }
 
   // Update method for trap animations
   public update(): void {
-    this.traps.forEach(trap => {
-      trap.update();
+    // Update parallax backgrounds
+    this.backgroundLayers.forEach((layer, index) => {
+      layer.tilePositionX = this.scene.cameras.main.scrollX * (0.1 + index * 0.2);
     });
+
+    // Update enemies
+    this.enemies.forEach(enemy => enemy.update());
   }
 
   // Trap interaction methods
