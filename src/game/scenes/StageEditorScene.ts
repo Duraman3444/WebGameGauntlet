@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_CONSTANTS } from '../config/GameConfig';
+import { AssetPaths } from '../../utils/assetPaths';
 
 interface PlacedObject {
   x: number;
@@ -9,14 +10,18 @@ interface PlacedObject {
 
 export class StageEditorScene extends Phaser.Scene {
   private assetKeys: string[] = [
-    // Traps / terrain
-    'spike_idle', 'trampoline_idle', 'fire_off', 'saw_on', 'bomb',
+    // Traps
+    'spike_idle', 'trampoline_idle', 'fire_off', 'fire_on', 'saw_on', 'falling_platform_on',
     // Boxes
     'box1', 'box2', 'box3',
     // Enemies
     'slime_green', 'slime_purple', 'knight',
     // Fruits
-    'apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'
+    'apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry',
+    // Checkpoints
+    'checkpoint',
+    // Terrain
+    'terrain_tileset'
   ];
   private currentAssetIndex: number = 0;
   private placedObjects: PlacedObject[] = [];
@@ -30,34 +35,47 @@ export class StageEditorScene extends Phaser.Scene {
 
   preload(): void {
     // Load any assets that might not already be present. If already loaded, this is a no-op.
-    const assetDefs: { key: string; path?: string; generate?: () => void }[] = [
-      { key: 'spike_idle', path: 'assets/sprites/Traps/Spikes/Idle.png' },
-      { key: 'trampoline_idle', path: 'assets/sprites/Traps/Trampoline/Idle.png' },
-      { key: 'fire_off', path: 'assets/sprites/Traps/Fire/Off.png' },
-      { key: 'saw_on', path: 'assets/sprites/Traps/Saw/On (38x38).png' },
-      { key: 'bomb', path: 'assets/sprites/sprites/09-Bomb/Bomb On (52x56).png' },
+    const assetDefs: { key: string; path: string }[] = [
+      // Traps
+      { key: 'spike_idle', path: AssetPaths.spike() },
+      { key: 'trampoline_idle', path: AssetPaths.trampoline() },
+      { key: 'fire_off', path: AssetPaths.fire('off') },
+      { key: 'fire_on', path: AssetPaths.fire('on') },
+      { key: 'saw_on', path: AssetPaths.saw() },
+      { key: 'falling_platform_on', path: AssetPaths.fallingPlatform() },
       // Boxes
-      { key: 'box1', path: 'assets/sprites/Items/Boxes/Box1/Idle.png' },
-      { key: 'box2', path: 'assets/sprites/Items/Boxes/Box2/Idle.png' },
-      { key: 'box3', path: 'assets/sprites/Items/Boxes/Box3/Idle.png' },
-      // Enemy sprites
-      { key: 'slime_green', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_green.png' },
-      { key: 'slime_purple', path: 'assets/sprites/brackeys_platformer_assets/sprites/slime_purple.png' },
-      { key: 'knight', path: 'assets/sprites/brackeys_platformer_assets/sprites/knight.png' },
+      { key: 'box1', path: AssetPaths.box('Box1') },
+      { key: 'box2', path: AssetPaths.box('Box2') },
+      { key: 'box3', path: AssetPaths.box('Box3') },
+      // Enemies
+      { key: 'slime_green', path: AssetPaths.enemy('slime_green') },
+      { key: 'slime_purple', path: AssetPaths.enemy('slime_purple') },
+      { key: 'knight', path: AssetPaths.enemy('knight') },
       // Fruits
-      { key: 'apple', path: 'assets/sprites/Items/Fruits/Apple.png' },
-      { key: 'bananas', path: 'assets/sprites/Items/Fruits/Bananas.png' },
-      { key: 'cherries', path: 'assets/sprites/Items/Fruits/Cherries.png' },
-      { key: 'kiwi', path: 'assets/sprites/Items/Fruits/Kiwi.png' },
-      { key: 'melon', path: 'assets/sprites/Items/Fruits/Melon.png' },
-      { key: 'orange', path: 'assets/sprites/Items/Fruits/Orange.png' },
-      { key: 'pineapple', path: 'assets/sprites/Items/Fruits/Pineapple.png' },
-      { key: 'strawberry', path: 'assets/sprites/Items/Fruits/Strawberry.png' }
+      { key: 'apple', path: AssetPaths.fruit('Apple') },
+      { key: 'bananas', path: AssetPaths.fruit('Bananas') },
+      { key: 'cherries', path: AssetPaths.fruit('Cherries') },
+      { key: 'kiwi', path: AssetPaths.fruit('Kiwi') },
+      { key: 'melon', path: AssetPaths.fruit('Melon') },
+      { key: 'orange', path: AssetPaths.fruit('Orange') },
+      { key: 'pineapple', path: AssetPaths.fruit('Pineapple') },
+      { key: 'strawberry', path: AssetPaths.fruit('Strawberry') },
+      // Checkpoints
+      { key: 'checkpoint', path: AssetPaths.checkpoint() },
+      // Terrain
+      { key: 'terrain_tileset', path: AssetPaths.terrain('Terrain (16x16).png') }
     ];
 
     assetDefs.forEach(def => {
-      if (!this.textures.exists(def.key) && def.path) {
-        this.load.image(def.key, encodeURI(def.path));
+      if (!this.textures.exists(def.key)) {
+        if (def.key === 'terrain_tileset') {
+          this.load.spritesheet(def.key, encodeURI(def.path), {
+            frameWidth: 16,
+            frameHeight: 16
+          });
+        } else {
+          this.load.image(def.key, encodeURI(def.path));
+        }
       }
     });
   }

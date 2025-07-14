@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Player } from '../entities/Player';
+import { AssetPaths } from '../../utils/assetPaths';
 
 export class MenuScene extends Phaser.Scene {
   private selectedCharacter: string = 'pinkman';
@@ -93,7 +94,7 @@ export class MenuScene extends Phaser.Scene {
     
     characterData.forEach(character => {
       animations.forEach(animation => {
-        const rawPath = `assets/sprites/players/Main Characters/${character.name}/${animation.name} (32x32).png`;
+        const rawPath = AssetPaths.player(character.name, animation.name);
         const encodedPath = encodeURI(rawPath);
         const assetKey = `${character.key}_${animation.key}`;
         
@@ -109,12 +110,12 @@ export class MenuScene extends Phaser.Scene {
     const backgrounds = ['Blue', 'Brown', 'Gray', 'Green', 'Pink', 'Purple', 'Yellow'];
     backgrounds.forEach(bg => {
       const bgKey = `bg_${bg.toLowerCase()}`;
-      const bgPath = `assets/sprites/Background/${bg}.png`;
+      const bgPath = AssetPaths.background(bg);
       this.load.image(bgKey, bgPath);
     });
     
     // Load terrain tileset as spritesheet
-    const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
+    const terrainPath = AssetPaths.terrain('Terrain (16x16).png');
     this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
       frameWidth: 16,
       frameHeight: 16

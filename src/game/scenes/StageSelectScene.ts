@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AssetPaths } from '../../utils/assetPaths';
 
 interface StageData {
   name: string;
@@ -42,7 +43,7 @@ export class StageSelectScene extends Phaser.Scene {
     const backgrounds = ['Blue', 'Brown', 'Gray', 'Green', 'Pink', 'Purple', 'Yellow'];
     backgrounds.forEach(bg => {
       const bgKey = `bg_${bg.toLowerCase()}`;
-      const bgPath = `assets/sprites/Background/${bg}.png`;
+      const bgPath = AssetPaths.background(bg);
       this.load.image(bgKey, bgPath);
     });
     
@@ -50,12 +51,12 @@ export class StageSelectScene extends Phaser.Scene {
     const seasonalTilesets = ['1 - Grassland', '2 - Autumn Forest', '3 - Tropics', '4 - Winter World'];
     seasonalTilesets.forEach(tileset => {
       const key = `tileset_${tileset.split(' - ')[1].toLowerCase().replace(' ', '_')}`;
-      const path = `assets/sprites/Seasonal Tilesets/${tileset}/Tileset.png`;
+      const path = AssetPaths.seasonalTileset(tileset.split(' - ')[1]);
       this.load.image(key, encodeURI(path));
     });
     
     // Load terrain tileset as spritesheet for accurate previews
-    const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
+    const terrainPath = AssetPaths.terrain('Terrain (16x16).png');
     this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
       frameWidth: 16,
       frameHeight: 16

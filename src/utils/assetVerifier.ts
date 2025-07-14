@@ -3,6 +3,8 @@
  * Checks if all required game assets exist and reports missing files
  */
 
+import { AssetPaths } from './assetPaths';
+
 export interface AssetInfo {
   key: string;
   path: string;
@@ -46,7 +48,7 @@ export class AssetVerifier {
     { key: 'virtualguy_hit', path: 'assets/sprites/players/Main Characters/Virtual Guy/Hit (32x32).png', type: 'spritesheet', required: true },
     
     // Terrain
-    { key: 'terrain_tileset', path: 'assets/sprites/terrain/Terrain (16x16).png', type: 'image', required: true },
+    { key: 'terrain_tileset', path: AssetPaths.terrain('Terrain (16x16).png'), type: 'image', required: true },
     
     // Fruits
     { key: 'apple', path: 'assets/sprites/items/Fruits/Apple.png', type: 'image', required: true },
@@ -64,7 +66,7 @@ export class AssetVerifier {
     { key: 'box3', path: 'assets/sprites/items/Boxes/Box3.png', type: 'image', required: true },
     
     // Traps
-    { key: 'spike_idle', path: 'assets/sprites/traps/Spikes/Idle.png', type: 'image', required: true },
+    { key: 'spike_idle', path: AssetPaths.spike(), type: 'image', required: true },
     { key: 'fire_off', path: 'assets/sprites/traps/Fire/Off.png', type: 'image', required: true },
     { key: 'fire_on', path: 'assets/sprites/traps/Fire/On (16x32).png', type: 'image', required: true },
     { key: 'fire_hit', path: 'assets/sprites/traps/Fire/Hit (16x32).png', type: 'image', required: true },

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_CONSTANTS, COLORS, LEVEL_DATA } from '../config/GameConfig';
+import { AssetPaths } from '../../utils/assetPaths';
 import { Player } from '../entities/Player';
 import { LevelSystem } from '../systems/LevelSystem';
 import { useGameStore } from '../../stores/gameStore';
@@ -82,7 +83,7 @@ export class GameScene extends Phaser.Scene {
     
     characterData.forEach(character => {
       animations.forEach(animation => {
-        const rawPath = `assets/sprites/players/Main Characters/${character.name}/${animation.name} (32x32).png`;
+        const rawPath = AssetPaths.player(character.name, animation.name);
         const encodedPath = encodeURI(rawPath);
         const assetKey = `${character.key}_${animation.key}`;
         
@@ -107,7 +108,7 @@ export class GameScene extends Phaser.Scene {
     ];
     
     fruits.forEach(fruit => {
-      const rawPath = `assets/sprites/Items/Fruits/${fruit.name}.png`;
+      const rawPath = AssetPaths.fruit(fruit.name);
       const encodedPath = encodeURI(rawPath);
       this.load.image(fruit.key, encodedPath);
       console.log(`🍎 Loading fruit: ${fruit.key} from ${encodedPath}`);
@@ -120,37 +121,37 @@ export class GameScene extends Phaser.Scene {
     // Load box assets
     const boxes = ['Box1', 'Box2', 'Box3'];
     boxes.forEach(box => {
-      const rawPath = `assets/sprites/Items/Boxes/${box}/Idle.png`;
+      const rawPath = AssetPaths.box(box);
       const encodedPath = encodeURI(rawPath);
       this.load.image(box.toLowerCase(), encodedPath);
     });
     
     // Load checkpoint assets
-    const checkpointPath = `assets/sprites/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`;
+    const checkpointPath = AssetPaths.checkpoint();
     const encodedCheckpointPath = encodeURI(checkpointPath);
     this.load.image('checkpoint', encodedCheckpointPath);
     
     // ---- Trap textures (match keys used in Trap.ts) ----
     // Spikes (idle)
-    const spikePath = `assets/sprites/Traps/Spikes/Idle.png`;
+    const spikePath = AssetPaths.spike();
     this.load.image('spike_idle', encodeURI(spikePath));
 
     // Trampoline (idle)
-    const trampolinePath = `assets/sprites/Traps/Trampoline/Idle.png`;
+    const trampolinePath = AssetPaths.trampoline();
     this.load.image('trampoline_idle', encodeURI(trampolinePath));
 
     // Fire (off / on)
-    const fireOffPath = `assets/sprites/Traps/Fire/Off.png`;
-    const fireOnPath = `assets/sprites/Traps/Fire/On (16x32).png`;
+    const fireOffPath = AssetPaths.fire('off');
+    const fireOnPath = AssetPaths.fire('on');
     this.load.image('fire_off', encodeURI(fireOffPath));
     this.load.image('fire_on', encodeURI(fireOnPath));
 
     // Saw (on)
-    const sawOnPath = `assets/sprites/Traps/Saw/On (38x38).png`;
+    const sawOnPath = AssetPaths.saw();
     this.load.image('saw_on', encodeURI(sawOnPath));
 
     // Falling platform (on)
-    const fpOnPath = `assets/sprites/Traps/Falling Platforms/On (32x10).png`;
+    const fpOnPath = AssetPaths.fallingPlatform();
     this.load.image('falling_platform_on', encodeURI(fpOnPath));
 
     // Keep basic spike & trampoline keys for backward compatibility
@@ -158,7 +159,7 @@ export class GameScene extends Phaser.Scene {
     this.load.image('trampoline', encodeURI(trampolinePath));
 
     // Load terrain tileset
-    const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
+    const terrainPath = AssetPaths.terrain('Terrain (16x16).png');
     this.load.spritesheet('terrain_tileset', encodeURI(terrainPath), {
       frameWidth: 16,
       frameHeight: 16
@@ -176,7 +177,7 @@ export class GameScene extends Phaser.Scene {
     const backgrounds = ['Blue', 'Brown', 'Gray', 'Green', 'Pink', 'Purple', 'Yellow'];
     backgrounds.forEach(bg => {
       const bgKey = `bg_${bg.toLowerCase()}`;
-      const bgPath = `assets/sprites/Background/${bg}.png`;
+      const bgPath = AssetPaths.background(bg);
       this.load.image(bgKey, bgPath);
     });
     
