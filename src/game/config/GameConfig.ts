@@ -213,8 +213,8 @@ export const LEVEL_THEMES = {
     name: 'Crystal Caverns',
     backgroundColor: '#2F2F2F',
     groundColor: '#8B4513',
-    tilesetKey: 'cave_tileset',
-    backgroundLayers: ['bg_cave_0', 'bg_cave_1', 'bg_cave_2'],
+    tilesetKey: 'terrain_tileset',
+    backgroundLayers: ['bg_gray'],
     music: 'cave_theme',
     decorations: ['stalactite', 'crystal', 'torch'],
     enemyTypes: ['spike', 'fire', 'falling_platform']
@@ -224,8 +224,8 @@ export const LEVEL_THEMES = {
     name: 'Central City',
     backgroundColor: '#4169E1',
     groundColor: '#696969',
-    tilesetKey: 'city_tileset',
-    backgroundLayers: ['bg_city_0', 'bg_city_1'],
+    tilesetKey: 'terrain_tileset',
+    backgroundLayers: ['bg_blue'],
     music: 'city_theme',
     decorations: ['building', 'streetlight', 'sign'],
     enemyTypes: ['saw', 'fire', 'falling_platform']
@@ -238,18 +238,18 @@ export const LEVEL_THEMES = {
     tilesetKey: 'stringstar_tileset',
     backgroundLayers: ['bg_stringstar_0', 'bg_stringstar_1', 'bg_stringstar_2'],
     music: 'stringstar_theme',
-    decorations: ['star_tree', 'cosmic_flower', 'energy_crystal'],
-    enemyTypes: ['trampoline', 'spike', 'saw']
+    decorations: ['flower', 'crystal', 'tree'],
+    enemyTypes: ['spike', 'trampoline', 'fire']
   },
   WINTER: {
     id: 'winter',
     name: 'Frozen Peaks',
-    backgroundColor: '#E6E6FA',
-    groundColor: '#FFFAFA',
-    tilesetKey: 'winter_tileset',
-    backgroundLayers: ['bg_winter'],
+    backgroundColor: '#B0E0E6',
+    groundColor: '#FFFFFF',
+    tilesetKey: 'terrain_tileset',
+    backgroundLayers: ['bg_purple'],
     music: 'winter_theme',
-    decorations: ['pine_tree', 'snowman', 'ice_crystal'],
+    decorations: ['snowflake', 'tree', 'crystal'],
     enemyTypes: ['spike', 'falling_platform']
   },
   DESERT: {
@@ -257,11 +257,11 @@ export const LEVEL_THEMES = {
     name: 'Sandy Dunes',
     backgroundColor: '#F4A460',
     groundColor: '#DEB887',
-    tilesetKey: 'desert_tileset',
-    backgroundLayers: ['bg_desert'],
+    tilesetKey: 'terrain_tileset',
+    backgroundLayers: ['bg_yellow'],
     music: 'desert_theme',
-    decorations: ['cactus', 'rock', 'oasis'],
-    enemyTypes: ['fire', 'saw', 'spike']
+    decorations: ['cactus', 'rock', 'dune'],
+    enemyTypes: ['spike', 'fire', 'saw']
   }
 };
 
@@ -444,8 +444,8 @@ export const LEVEL_DATA = {
   fruits: [
     // Starting area fruits
     { x: 256, y: 450, type: 'apple' },
-    { x: 384, y: 450, type: 'banana' },
-    { x: 512, y: 280, type: 'cherry' },                               // Above first question block
+    { x: 384, y: 450, type: 'bananas' },
+    { x: 512, y: 280, type: 'cherries' },                               // Above first question block
     
     // Question block area fruits
     { x: 640, y: 280, type: 'melon' },                                // Above triple blocks
@@ -456,8 +456,8 @@ export const LEVEL_DATA = {
     
     // Brick block area fruits
     { x: 1024, y: 280, type: 'apple' },
-    { x: 1280, y: 280, type: 'banana' },
-    { x: 1312, y: 280, type: 'cherry' },
+    { x: 1280, y: 280, type: 'bananas' },
+    { x: 1312, y: 280, type: 'cherries' },
     { x: 1344, y: 280, type: 'kiwi' },
     { x: 1376, y: 280, type: 'melon' },
     { x: 1280, y: 180, type: 'pineapple' },                           // Above high brick block
@@ -466,10 +466,10 @@ export const LEVEL_DATA = {
     { x: 1792, y: 350, type: 'orange' },                              // On small pipe
     { x: 2176, y: 350, type: 'strawberry' },                          // On medium pipe
     { x: 2432, y: 280, type: 'apple' },                               // On large pipe
-    { x: 2688, y: 350, type: 'banana' },                              // On medium pipe
+    { x: 2688, y: 350, type: 'bananas' },                              // On medium pipe
     
     // Scattered fruits throughout level
-    { x: 800, y: 450, type: 'cherry' },
+    { x: 800, y: 450, type: 'cherries' },
     { x: 1152, y: 450, type: 'kiwi' },
     { x: 1472, y: 450, type: 'melon' },
     { x: 1600, y: 280, type: 'orange' },                              // On moving platform
@@ -478,8 +478,8 @@ export const LEVEL_DATA = {
     { x: 2624, y: 450, type: 'apple' },
     
     // Stairs area fruits
-    { x: 3008, y: 450, type: 'banana' },                              // On first step
-    { x: 3136, y: 380, type: 'cherry' },                              // On third step
+    { x: 3008, y: 450, type: 'bananas' },                              // On first step
+    { x: 3136, y: 380, type: 'cherries' },                              // On third step
     { x: 3264, y: 350, type: 'kiwi' },                                // On top platform
     { x: 3456, y: 410, type: 'melon' },                               // On down stairs
     
@@ -491,8 +491,8 @@ export const LEVEL_DATA = {
     
     // Final area fruits
     { x: 3584, y: 450, type: 'apple' },
-    { x: 3700, y: 450, type: 'banana' },
-    { x: 3800, y: 450, type: 'cherry' },
+    { x: 3700, y: 450, type: 'bananas' },
+    { x: 3800, y: 450, type: 'cherries' },
     { x: 3900, y: 450, type: 'kiwi' }
   ],
   

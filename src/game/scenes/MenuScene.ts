@@ -130,7 +130,15 @@ export class MenuScene extends Phaser.Scene {
     const animations = ['idle', 'run', 'jump', 'fall', 'double_jump', 'wall_jump', 'hit'];
     
     characters.forEach((character, index) => {
-      const color = [0xFF69B4, 0x8A2BE2, 0x00FF00, 0x00BFFF, 0xFFD700, 0xC0C0C0, 0x8B4513][index];
+      const colors = [
+        '#FF69B4', // Pink for pinkman
+        '#8A2BE2', // Blue violet for maskdude
+        '#00FF00', // Green for ninjafrog
+        '#00BFFF', // Deep sky blue for virtualguy
+        '#FFD700', // Gold for kinghuman
+        '#C0C0C0', // Silver for robot
+        '#8B4513'  // Saddle brown for adventurehero
+      ];
       
       animations.forEach(animation => {
         const key = `${character}_${animation}`;
@@ -142,47 +150,27 @@ export class MenuScene extends Phaser.Scene {
         
         console.log(`🎨 Creating placeholder spritesheet for ${key}`);
         
-        // Create a simple single-frame texture for placeholders
+        // Create a proper spritesheet texture instead of basic canvas
+        const frameWidth = 32;
+        const frameHeight = 32;
+        const frameCount = 1; // Single frame for now
+        
+        // Create canvas for spritesheet
         const canvas = document.createElement('canvas');
-        canvas.width = 32;
-        canvas.height = 32;
+        canvas.width = frameWidth * frameCount;
+        canvas.height = frameHeight;
         const ctx = canvas.getContext('2d')!;
         
-        // Base character color
-        ctx.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
-        ctx.fillRect(0, 0, 32, 32);
+        // Create a character-like placeholder sprite
+        this.drawCharacterPlaceholder(ctx, colors[index], animation, frameWidth, frameHeight);
         
-        // Add animation-specific details
-        ctx.fillStyle = '#ffffff';
-        switch (animation) {
-          case 'idle':
-            ctx.fillRect(12, 8, 8, 8);
-            break;
-          case 'run':
-            ctx.fillRect(8, 24, 6, 4);
-            ctx.fillRect(18, 24, 6, 4);
-            break;
-          case 'jump':
-            ctx.fillRect(4, 8, 4, 8);
-            ctx.fillRect(24, 8, 4, 8);
-            break;
-          case 'fall':
-            ctx.fillRect(4, 16, 4, 8);
-            ctx.fillRect(24, 16, 4, 8);
-            break;
-          case 'wall_jump':
-            ctx.fillRect(28, 8, 4, 16);
-            break;
-          case 'hit':
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(8, 8, 16, 16);
-            break;
+        // Convert canvas to texture and add to Phaser
+        const texture = this.textures.createCanvas(key, frameWidth, frameHeight);
+        if (texture) {
+          const context = texture.getContext();
+          context.drawImage(canvas, 0, 0);
+          texture.refresh();
         }
-        
-        // Convert canvas to texture
-        const texture = this.textures.addCanvas(key, canvas);
-        
-        // Single-frame texture is ready to use - no additional frame setup needed
       });
     });
     
@@ -228,65 +216,131 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  private drawCharacterPlaceholder(ctx: CanvasRenderingContext2D, color: string, animation: string, width: number, height: number): void {
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Base character body
+    ctx.fillStyle = color;
+    ctx.fillRect(6, 8, 20, 24);
+    
+    // Head
+    ctx.fillStyle = color;
+    ctx.fillRect(8, 2, 16, 12);
+    
+    // Eyes
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(10, 6, 3, 3);
+    ctx.fillRect(19, 6, 3, 3);
+    
+    // Add animation-specific details
+    ctx.fillStyle = '#FFFFFF';
+    switch (animation) {
+      case 'idle':
+        // Normal stance
+        ctx.fillRect(4, 26, 6, 6); // left foot
+        ctx.fillRect(22, 26, 6, 6); // right foot
+        break;
+      case 'run':
+        // Running stance
+        ctx.fillRect(2, 24, 6, 8); // left foot forward
+        ctx.fillRect(24, 26, 6, 6); // right foot back
+        break;
+      case 'jump':
+        // Jumping stance
+        ctx.fillRect(2, 20, 6, 4); // left arm up
+        ctx.fillRect(24, 20, 6, 4); // right arm up
+        ctx.fillRect(8, 26, 6, 6); // feet together
+        ctx.fillRect(18, 26, 6, 6);
+        break;
+      case 'fall':
+        // Falling stance
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(2, 16, 6, 8); // left arm down
+        ctx.fillRect(24, 16, 6, 8); // right arm down
+        break;
+      case 'double_jump':
+        // Double jump effect
+        ctx.fillStyle = '#00FFFF';
+        ctx.fillRect(12, 20, 8, 4); // jump effect
+        break;
+      case 'wall_jump':
+        // Wall jump stance
+        ctx.fillStyle = '#FFA500';
+        ctx.fillRect(0, 12, 4, 8); // touching wall
+        break;
+      case 'hit':
+        // Hit effect
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(4, 4, 24, 4); // hit flash
+        break;
+    }
+  }
+
   private loadCharacterAssets(): void {
     console.log('👤 Loading character assets...');
     
-    // Try to load real character assets, fall back to placeholders if not found
-    const characters = ['Pink Man', 'Mask Dude', 'Ninja Frog', 'Virtual Guy', 'King Human', 'Robot', 'Adventure Hero'];
-    const characterKeys = ['pinkman', 'maskdude', 'ninjafrog', 'virtualguy', 'kinghuman', 'robot', 'adventurehero'];
-    const animations = ['Idle', 'Run', 'Jump', 'Fall', 'Double Jump', 'Wall Jump', 'Hit'];
+    // Define character data with proper sprite dimensions
+    const characterData = [
+      { name: 'Pink Man', key: 'pinkman', color: '#FF69B4' },
+      { name: 'Mask Dude', key: 'maskdude', color: '#8A2BE2' },
+      { name: 'Ninja Frog', key: 'ninjafrog', color: '#00FF00' },
+      { name: 'Virtual Guy', key: 'virtualguy', color: '#00BFFF' },
+      { name: 'King Human', key: 'kinghuman', color: '#FFD700' },
+      { name: 'Robot', key: 'robot', color: '#C0C0C0' },
+      { name: 'Adventure Hero', key: 'adventurehero', color: '#8B4513' }
+    ];
     
-    characters.forEach((character, index) => {
-      const characterKey = characterKeys[index];
-      console.log(`👤 Loading character: ${character} (key: ${characterKey})`);
+    const animations = [
+      { name: 'Idle', key: 'idle' },
+      { name: 'Run', key: 'run' },
+      { name: 'Jump', key: 'jump' },
+      { name: 'Fall', key: 'fall' },
+      { name: 'Double Jump', key: 'double_jump' },
+      { name: 'Wall Jump', key: 'wall_jump' },
+      { name: 'Hit', key: 'hit' }
+    ];
+    
+    characterData.forEach(character => {
+      console.log(`👤 Loading character: ${character.name} (key: ${character.key})`);
       
       animations.forEach(animation => {
-        const animationKey = animation.toLowerCase().replace(' ', '_');
-        // NOTE: Assets are located under public/assets/sprites/players/Main Characters/
-        // Use encodeURI to handle spaces and parentheses in filenames.
-        const rawPath = `assets/sprites/players/Main Characters/${character}/${animation} (32x32).png`;
-        const assetPath = encodeURI(rawPath);
-        const finalKey = `${characterKey}_${animationKey}`;
+        console.log(`  🎭 Loading animation: ${animation.name}`);
         
-        console.log(`  🎭 Loading animation: ${animation}`);
+        const rawPath = `assets/sprites/players/Main Characters/${character.name}/${animation.name} (32x32).png`;
+        const encodedPath = encodeURI(rawPath);
+        const assetKey = `${character.key}_${animation.key}`;
+        
         console.log(`    📁 Raw path: ${rawPath}`);
-        console.log(`    🔗 Encoded path: ${assetPath}`);
-        console.log(`    🔑 Asset key: ${finalKey}`);
+        console.log(`    🔗 Encoded path: ${encodedPath}`);
+        console.log(`    🔑 Asset key: ${assetKey}`);
         
-        // Load as image first - we'll handle spritesheets vs single images in the animation system
-        this.load.image(finalKey, assetPath);
-        
-        // Remove the spritesheet loading attempt for now
-        // this.load.spritesheet(finalKey, assetPath, {
-        //   frameWidth: 32,
-        //   frameHeight: 32
-        // });
-        
-        // Also try loading as single image as fallback
-        // this.load.on('loaderror', (file: any) => {
-        //   if (file.key === finalKey) {
-        //     console.log(`  🔄 ${finalKey} failed as spritesheet, trying as single image`);
-        //     this.load.image(finalKey, assetPath);
-        //   }
-        // });
+        // Load as spritesheet with proper frame configuration
+        this.load.spritesheet(assetKey, encodedPath, {
+          frameWidth: 32,
+          frameHeight: 32,
+          startFrame: 0,
+          endFrame: -1 // Load all frames
+        });
       });
     });
   }
 
   private loadGameAssets(): void {
-    console.log('🎮 Loading game assets...');
-    
-    // Load terrain assets (encode URI for special characters)
-    const terrainPath = encodeURI('assets/sprites/Terrain/Terrain (16x16).png');
-    console.log(`🏔️  Loading terrain: ${terrainPath}`);
-    this.load.image('terrain_tileset', terrainPath);
-    
-    // Load fruit assets
+    // Load terrain tileset
+    const terrainPath = `assets/sprites/Terrain/Terrain (16x16).png`;
+    console.log(`🏔️  Loading terrain: ${encodeURI(terrainPath)}`);
+    this.load.image('terrain_tileset', encodeURI(terrainPath));
+
+    // Load fruit assets (collectibles)
     console.log('🍎 Loading fruit assets...');
+    // Fix: Use actual fruit file names
     const fruits = ['Apple', 'Bananas', 'Cherries', 'Kiwi', 'Melon', 'Orange', 'Pineapple', 'Strawberry'];
-    fruits.forEach(fruit => {
+    const fruitKeys = ['apple', 'bananas', 'cherries', 'kiwi', 'melon', 'orange', 'pineapple', 'strawberry'];
+    
+    fruits.forEach((fruit, index) => {
       const fruitPath = `assets/sprites/Items/Fruits/${fruit}.png`;
-      const fruitKey = fruit.toLowerCase();
+      const fruitKey = fruitKeys[index];
       console.log(`  🍓 Loading fruit: ${fruit} -> ${fruitKey} (${fruitPath})`);
       this.load.image(fruitKey, fruitPath);
     });
@@ -321,15 +375,15 @@ export class MenuScene extends Phaser.Scene {
     console.log('🔘 Loading button assets...');
     const buttons = ['Play', 'Back', 'Next', 'Previous', 'Settings', 'Restart', 'Levels', 'Achievements', 'Leaderboard', 'Close', 'Volume'];
     buttons.forEach(button => {
-      const btnKey = `btn_${button.toLowerCase()}`;
-      const btnPath = `assets/sprites/Menu/Buttons/${button}.png`;
-      console.log(`  🔘 Loading button: ${button} -> ${btnKey} (${btnPath})`);
-      this.load.image(btnKey, btnPath);
+      const buttonKey = `btn_${button.toLowerCase()}`;
+      const buttonPath = `assets/sprites/Menu/Buttons/${button}.png`;
+      console.log(`  🔘 Loading button: ${button} -> ${buttonKey} (${buttonPath})`);
+      this.load.image(buttonKey, buttonPath);
     });
-    
-    // Load trap assets with proper path encoding
+
+    // Load trap assets
     console.log('⚡ Loading trap assets...');
-    const trapAssets = [
+    const traps = [
       { key: 'spike_idle', path: 'assets/sprites/Traps/Spikes/Idle.png' },
       { key: 'fire_off', path: 'assets/sprites/Traps/Fire/Off.png' },
       { key: 'fire_on', path: encodeURI('assets/sprites/Traps/Fire/On (16x32).png') },
@@ -343,21 +397,21 @@ export class MenuScene extends Phaser.Scene {
       { key: 'falling_platform_off', path: 'assets/sprites/Traps/Falling Platforms/Off.png' }
     ];
     
-    trapAssets.forEach(trap => {
+    traps.forEach(trap => {
       console.log(`  ⚡ Loading trap: ${trap.key} (${trap.path})`);
       this.load.image(trap.key, trap.path);
     });
-    
+
     // Load Stringstar Fields level assets
     console.log('🌟 Loading Stringstar Fields level assets...');
-    const stringsStarAssets = [
+    const stringstarAssets = [
       { key: 'bg_stringstar_0', path: 'assets/levels/stringstar_fields/background_0.png' },
       { key: 'bg_stringstar_1', path: 'assets/levels/stringstar_fields/background_1.png' },
       { key: 'bg_stringstar_2', path: 'assets/levels/stringstar_fields/background_2.png' },
       { key: 'stringstar_tileset', path: 'assets/levels/stringstar_fields/tileset.png' }
     ];
     
-    stringsStarAssets.forEach(asset => {
+    stringstarAssets.forEach(asset => {
       console.log(`  🌟 Loading Stringstar asset: ${asset.key} (${asset.path})`);
       this.load.image(asset.key, asset.path);
     });
