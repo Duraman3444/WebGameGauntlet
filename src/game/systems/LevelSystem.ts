@@ -170,11 +170,27 @@ export class LevelSystem {
   private createThemedTerrain(): void {
     const { tilesetKey } = this.currentTheme;
     
-    // Check if the themed tileset exists, fallback to default
-    const actualTilesetKey = this.scene.textures.exists(tilesetKey) ? tilesetKey : 'terrain_tileset';
+    // Map theme tileset keys to actual seasonal tileset paths
+    const tilesetMapping: { [key: string]: string } = {
+      'grassland_tileset': 'grassland_tileset',
+      'autumn_tileset': 'autumn_tileset', 
+      'tropics_tileset': 'tropics_tileset',
+      'winter_tileset': 'winter_tileset',
+      'cave_tileset': 'grassland_tileset', // Use grassland for cave
+      'city_tileset': 'grassland_tileset', // Use grassland for city
+      'desert_tileset': 'grassland_tileset', // Use grassland for desert
+      'space_tileset': 'grassland_tileset', // Use grassland for space
+      'sakura_tileset': 'grassland_tileset' // Use grassland for sakura
+    };
     
-    if (actualTilesetKey !== tilesetKey) {
-      console.warn(`⚠️ Tileset ${tilesetKey} not found, using default terrain_tileset`);
+    // Get the actual tileset to use
+    const actualTilesetKey = tilesetMapping[tilesetKey] || 'grassland_tileset';
+    
+    // Check if the tileset exists, fallback to terrain_tileset if not
+    const finalTilesetKey = this.scene.textures.exists(actualTilesetKey) ? actualTilesetKey : 'terrain_tileset';
+    
+    if (finalTilesetKey !== actualTilesetKey) {
+      console.warn(`⚠️ Tileset ${actualTilesetKey} not found, using fallback terrain_tileset`);
     }
     
     // Create tiled ground texture
@@ -183,12 +199,12 @@ export class LevelSystem {
       GAME_CONSTANTS.WORLD_HEIGHT * 0.6,
       GAME_CONSTANTS.WORLD_WIDTH,
       GAME_CONSTANTS.WORLD_HEIGHT * 0.4,
-      actualTilesetKey,
+      finalTilesetKey,
       0 // ensure only the first tile frame is used repeatedly
     ).setOrigin(0, 0);
     
     this.background.setDepth(-5);
-    console.log(`🏔️ Created terrain with tileset: ${actualTilesetKey}`);
+    console.log(`🏔️ Created terrain with tileset: ${finalTilesetKey}`);
   }
 
   private createThemedDecorations(): void {
@@ -556,9 +572,20 @@ export class LevelSystem {
     const targetGroup = type === 'wall' ? this.walls : this.platforms;
 
     // Use themed tileset for platforms
-    const tilesetKey = this.scene.textures.exists(this.currentTheme.tilesetKey)
-      ? this.currentTheme.tilesetKey
-      : 'terrain_tileset';
+    const tilesetMapping: { [key: string]: string } = {
+      'grassland_tileset': 'grassland_tileset',
+      'autumn_tileset': 'autumn_tileset', 
+      'tropics_tileset': 'tropics_tileset',
+      'winter_tileset': 'winter_tileset',
+      'cave_tileset': 'grassland_tileset', // Use grassland for cave
+      'city_tileset': 'grassland_tileset', // Use grassland for city
+      'desert_tileset': 'grassland_tileset', // Use grassland for desert
+      'space_tileset': 'grassland_tileset', // Use grassland for space
+      'sakura_tileset': 'grassland_tileset' // Use grassland for sakura
+    };
+    
+    const actualTilesetKey = tilesetMapping[this.currentTheme.tilesetKey] || 'grassland_tileset';
+    const tilesetKey = this.scene.textures.exists(actualTilesetKey) ? actualTilesetKey : 'terrain_tileset';
 
     if (!this.scene.textures.exists(tilesetKey)) {
       console.warn(`❌ Platform texture ${tilesetKey} not found for platform creation`);

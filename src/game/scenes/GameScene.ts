@@ -173,6 +173,23 @@ export class GameScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16
     });
+    
+    // Load seasonal tilesets for better visuals
+    const seasonalTilesets = [
+      { key: 'grassland_tileset', season: '1 - Grassland' },
+      { key: 'autumn_tileset', season: '2 - Autumn Forest' },
+      { key: 'tropics_tileset', season: '3 - Tropics' },
+      { key: 'winter_tileset', season: '4 - Winter World' }
+    ];
+    
+    seasonalTilesets.forEach(tileset => {
+      const seasonalPath = AssetPaths.seasonalTileset(tileset.season);
+      this.load.spritesheet(tileset.key, encodeURI(seasonalPath), {
+        frameWidth: 16,
+        frameHeight: 16
+      });
+      console.log(`🌍 Loading seasonal tileset: ${tileset.key} from ${seasonalPath}`);
+    });
 
     // ---- Goal texture (reuse checkpoint flag) ----
     const goalPath = `assets/sprites/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`;

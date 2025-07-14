@@ -61,6 +61,22 @@ export class StageSelectScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16
     });
+    
+    // Load seasonal tilesets for better visuals
+    const seasonalTilesetsForLoading = [
+      { key: 'grassland_tileset', season: '1 - Grassland' },
+      { key: 'autumn_tileset', season: '2 - Autumn Forest' },
+      { key: 'tropics_tileset', season: '3 - Tropics' },
+      { key: 'winter_tileset', season: '4 - Winter World' }
+    ];
+    
+    seasonalTilesetsForLoading.forEach(tileset => {
+      const seasonalPath = AssetPaths.seasonalTileset(tileset.season);
+      this.load.spritesheet(tileset.key, encodeURI(seasonalPath), {
+        frameWidth: 16,
+        frameHeight: 16
+      });
+    });
   }
 
   create(): void {

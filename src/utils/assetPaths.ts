@@ -3,6 +3,7 @@ export const ASSET_ROOTS = {
   BACKGROUNDS: 'assets/levels/common/Background',
   BACKGROUNDS_ALT: 'assets/levels/common/backgrounds',
   TERRAIN: 'assets/levels/common/terrain',
+  SEASONAL_TERRAIN: 'assets/levels/common/Terrain/Seasonal Tilesets',
   TRAPS: 'assets/levels/common/Traps',
   OBJECTS: 'assets/levels/common/objects',
   UI: 'assets/ui',
@@ -15,31 +16,33 @@ export const AssetPaths = {
   background: (name: string) => `${ASSET_ROOTS.BACKGROUNDS}/${name}.png`,
   backgroundAlt: (name: string) => `${ASSET_ROOTS.BACKGROUNDS_ALT}/${name}.png`,
   
-  // Terrain
-  terrain: (name: string) => `${ASSET_ROOTS.TERRAIN}/${name}`,
-  seasonalTileset: (season: string) => `${ASSET_ROOTS.TERRAIN}/Seasonal Tilesets/${season}/Terrain (16 x 16).png`,
+  // Terrain - Use grassland tileset as default instead of generic green blocks
+  terrain: (name: string) => {
+    // Use proper grassland terrain for better visuals
+    if (name === 'Terrain (16x16).png') {
+      return `${ASSET_ROOTS.SEASONAL_TERRAIN}/1 - Grassland/Terrain (16 x 16).png`;
+    }
+    return `${ASSET_ROOTS.TERRAIN}/${name}`;
+  },
+  seasonalTileset: (season: string) => `${ASSET_ROOTS.SEASONAL_TERRAIN}/${season}/Terrain (16 x 16).png`,
   
   // Traps
   trap: (folder: string, file: string) => `${ASSET_ROOTS.TRAPS}/${folder}/${file}`,
   spike: () => `${ASSET_ROOTS.TRAPS}/Spikes/Idle.png`,
   trampoline: () => `${ASSET_ROOTS.TRAPS}/Trampoline/Idle.png`,
-  fire: (state: 'off' | 'on') => `${ASSET_ROOTS.TRAPS}/Fire/${state === 'off' ? 'Off.png' : 'On (16x32).png'}`,
-  saw: () => `${ASSET_ROOTS.TRAPS}/Saw/On (38x38).png`,
-  fallingPlatform: () => `${ASSET_ROOTS.TRAPS}/Falling Platforms/On (32x10).png`,
+  fire: (state: string) => `${ASSET_ROOTS.TRAPS}/Fire/${state === 'on' ? 'on' : 'off'}.png`,
+  saw: () => `${ASSET_ROOTS.TRAPS}/Saw/On.png`,
+  fallingPlatform: () => `${ASSET_ROOTS.TRAPS}/Falling Platforms/On.png`,
   
-  // Objects
-  object: (folder: string, file: string) => `${ASSET_ROOTS.OBJECTS}/${folder}/${file}`,
-  fruit: (name: string) => `${ASSET_ROOTS.OBJECTS}/Fruits/${name}.png`,
-  box: (type: string) => `${ASSET_ROOTS.OBJECTS}/Boxes/${type}/Idle.png`,
-  checkpoint: () => `${ASSET_ROOTS.OBJECTS}/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`,
+  // Items
+  fruit: (name: string) => `${ASSET_ROOTS.SPRITES}/Items/Fruits/${name}.png`,
+  box: (name: string) => `${ASSET_ROOTS.SPRITES}/Items/Boxes/Box1/${name}.png`,
+  checkpoint: () => `${ASSET_ROOTS.SPRITES}/Items/Checkpoints/Checkpoint/Checkpoint (Flag Idle)(64x64).png`,
   
-  // UI
-  ui: (folder: string, file: string) => `${ASSET_ROOTS.UI}/${folder}/${file}`,
-  menuButton: (name: string) => `${ASSET_ROOTS.UI}/Menu/Buttons/${name}.png`,
-  
-  // Sprites (characters, weapons, etc.)
-  sprite: (folder: string, file: string) => `${ASSET_ROOTS.SPRITES}/${folder}/${file}`,
+  // Players
   player: (character: string, animation: string) => `${ASSET_ROOTS.SPRITES}/players/Main Characters/${character}/${animation} (32x32).png`,
+  
+  // Enemies
   enemy: (name: string) => {
     // Handle different enemy types
     if (['slime_green', 'slime_purple', 'knight'].includes(name)) {
@@ -53,6 +56,9 @@ export const AssetPaths = {
     return `${ASSET_ROOTS.SPRITES}/enemies/${name}.png`;
   },
   
-  // Level-specific
-  levelAsset: (levelName: string, file: string) => `${ASSET_ROOTS.LEVELS}/${levelName}/${file}`
+  // UI
+  ui: (name: string) => `${ASSET_ROOTS.UI}/${name}`,
+  
+  // Levels
+  level: (name: string) => `${ASSET_ROOTS.LEVELS}/${name}`
 }; 
