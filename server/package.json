@@ -1,0 +1,21 @@
+{
+  "name": "mario-clone-server",
+  "version": "1.0.0",
+  "description": "Socket.io server for Super Mario World Clone multiplayer game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["socket.io", "multiplayer", "game", "mario", "real-time"],
+  "author": "Game Development Team",
+  "license": "MIT"
+} 

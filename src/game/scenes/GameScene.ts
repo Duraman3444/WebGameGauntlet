@@ -1,0 +1,514 @@
+import Phaser from 'phaser';
+import { GAME_CONSTANTS, COLORS, LEVEL_DATA } from '../config/GameConfig';
+import { Player } from '../entities/Player';
+import { LevelSystem } from '../systems/LevelSystem';
+import { useGameStore } from '../../stores/gameStore';
+
+export class GameScene extends Phaser.Scene {
+  private players: Map<string, Player> = new Map();
+  private localPlayer!: Player;
+  private levelSystem!: LevelSystem;
+  private gameStore: any;
+  private playerIndex: number = 0;
+  
+  // UI elements
+  private scoreText!: Phaser.GameObjects.Text;
+  private livesText!: Phaser.GameObjects.Text;
+  private fruitsText!: Phaser.GameObjects.Text;
+  private timeText!: Phaser.GameObjects.Text;
+  private playersText!: Phaser.GameObjects.Text;
+  private characterText!: Phaser.GameObjects.Text;
+  
+  // Game state
+  private gameTime: number = 0;
+  private gameStartTime: number = 0;
+  private gameTimer!: Phaser.Time.TimerEvent;
+  private levelCompleted: boolean = false;
+  private lastCheckpoint: { x: number; y: number } = { x: 100, y: 400 };
+
+  constructor() {
+    super({ key: 'GameScene' });
+  }
+
+  create(): void {
+    // Get game store instance
+    this.gameStore = useGameStore.getState();
+    
+    // Create level system
+    this.levelSystem = new LevelSystem(this);
+    
+    // Create local player
+    this.createLocalPlayer();
+    
+    // Set up collision detection
+    this.setupCollisions();
+    
+    // Create UI
+    this.createUI();
+    
+    // Set up camera
+    this.setupCamera();
+    
+    // Start game timer
+    this.startGameTimer();
+    
+    // Initialize multiplayer
+    this.initializeMultiplayer();
+    
+    // Set up event listeners
+    this.setupEventListeners();
+  }
+
+  private createLocalPlayer(): void {
+    const spawnPoint = this.lastCheckpoint;
+    
+    // Create local player with Pink Man as default (player 1)
+    this.localPlayer = new Player(this, spawnPoint.x, spawnPoint.y, 'local', 0);
+    this.players.set('local', this.localPlayer);
+    
+    // Set up input events
+    this.setupPlayerEvents();
+  }
+
+  private setupPlayerEvents(): void {
+    // Listen for fruit collection
+    this.events.on('fruit_collected', (data: any) => {
+      console.log(`Player ${data.playerId} collected ${data.fruitType}`);
+    });
+    
+    // Listen for jump events
+    this.events.on('player_jump', (data: any) => {
+      console.log(`Player ${data.playerId} jumped`);
+    });
+    
+    this.events.on('player_double_jump', (data: any) => {
+      console.log(`Player ${data.playerId} double jumped`);
+    });
+    
+    this.events.on('player_wall_jump', (data: any) => {
+      console.log(`Player ${data.playerId} wall jumped`);
+    });
+    
+    // Listen for trap events
+    this.events.on('trap_triggered', (data: any) => {
+      console.log(`Player ${data.playerId} triggered ${data.trapType} trap for ${data.damage} damage`);
+    });
+    
+    this.events.on('trampoline_bounced', (data: any) => {
+      console.log(`Player ${data.playerId} bounced on trampoline at (${data.x}, ${data.y})`);
+    });
+    
+    // Listen for game over
+    this.events.on('player_game_over', (data: any) => {
+      this.handleGameOver();
+    });
+    
+    // Listen for respawn
+    this.events.on('player_respawn', (data: any) => {
+      console.log(`Player ${data.playerId} respawned`);
+    });
+  }
+
+  private setupCollisions(): void {
+    // Player-Platform collisions
+    this.players.forEach(player => {
+      this.physics.add.collider(player.sprite, this.levelSystem.getPlatforms());
+      this.physics.add.collider(player.sprite, this.levelSystem.getWalls());
+      this.physics.add.collider(player.sprite, this.levelSystem.getBoxes());
+    });
+
+    // Player-Fruit collisions
+    this.players.forEach(player => {
+      this.physics.add.overlap(player.sprite, this.levelSystem.getFruits(), 
+        (playerSprite, fruit) => this.handleFruitCollection(player, fruit as Phaser.Physics.Arcade.Sprite), 
+        undefined, this);
+    });
+
+    // Player-Box collisions (for breaking boxes)
+    this.players.forEach(player => {
+      this.physics.add.overlap(player.sprite, this.levelSystem.getBoxes(), 
+        (playerSprite, box) => this.handleBoxHit(player, box as Phaser.Physics.Arcade.Sprite), 
+        undefined, this);
+    });
+
+    // Player-Checkpoint collisions
+    this.players.forEach(player => {
+      this.physics.add.overlap(player.sprite, this.levelSystem.getCheckpoints(), 
+        (playerSprite, checkpoint) => this.handleCheckpointReached(player, checkpoint as Phaser.Physics.Arcade.Sprite), 
+        undefined, this);
+    });
+
+    // Player-Goal collisions
+    this.players.forEach(player => {
+      this.physics.add.overlap(player.sprite, this.levelSystem.getGoal(), 
+        (playerSprite, goal) => this.handleGoalReached(player), 
+        undefined, this);
+    });
+  }
+
+  private handleFruitCollection(player: Player, fruit: Phaser.Physics.Arcade.Sprite): void {
+    if (player.isLocal) {
+      const fruitType = this.levelSystem.collectFruit(fruit);
+      player.collectFruit(fruitType);
+      
+      // Send network event
+      this.gameStore.sendPlayerAction?.({
+        type: 'fruit_collected',
+        playerId: player.id,
+        fruitType: fruitType,
+        fruitX: fruit.x,
+        fruitY: fruit.y,
+        newScore: player.score,
+        fruitsCollected: player.fruitsCollected
+      });
+    }
+  }
+
+  private handleBoxHit(player: Player, box: Phaser.Physics.Arcade.Sprite): void {
+    if (player.isLocal) {
+      const playerBody = player.sprite.body as Phaser.Physics.Arcade.Body;
+      const boxBody = box.body as Phaser.Physics.Arcade.Body;
+
+      // Check if player is hitting box from below or above
+      if (playerBody.touching.up && boxBody.touching.down) {
+        // Player hit box from below
+        this.levelSystem.hitBox(box);
+        player.hitBox();
+        
+        // Send network event
+        this.gameStore.sendPlayerAction?.({
+          type: 'box_broken',
+          playerId: player.id,
+          boxX: box.x,
+          boxY: box.y,
+          newScore: player.score
+        });
+      }
+    }
+  }
+
+  private handleCheckpointReached(player: Player, checkpoint: Phaser.Physics.Arcade.Sprite): void {
+    if (player.isLocal && !checkpoint.getData('activated')) {
+      this.levelSystem.activateCheckpoint(checkpoint);
+      
+      // Update last checkpoint
+      this.lastCheckpoint = { x: checkpoint.x, y: checkpoint.y };
+      
+      // Send network event
+      this.gameStore.sendPlayerAction?.({
+        type: 'checkpoint_reached',
+        playerId: player.id,
+        checkpointX: checkpoint.x,
+        checkpointY: checkpoint.y
+      });
+    }
+  }
+
+  private handleGoalReached(player: Player): void {
+    if (!this.levelCompleted) {
+      this.levelCompleted = true;
+      this.completeLevel();
+    }
+  }
+
+  private completeLevel(): void {
+    // Stop game timer
+    if (this.gameTimer) {
+      this.gameTimer.destroy();
+    }
+    
+    // Create victory effect
+    this.levelSystem.reachGoal();
+    
+    // Calculate final score
+    const timeBonus = Math.max(0, (GAME_CONSTANTS.LEVEL_TIME_LIMIT - this.gameTime) * 10);
+    const finalScore = this.localPlayer.score + timeBonus;
+    
+    // Create victory text
+    const victoryText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
+      `Level Complete!\n\nScore: ${finalScore}\nTime Bonus: ${timeBonus}\n\nPress SPACE to continue`, {
+      fontSize: '32px',
+      color: '#FFD700',
+      fontStyle: 'bold',
+      align: 'center',
+      backgroundColor: '#000000',
+      padding: { x: 20, y: 20 }
+    });
+    victoryText.setOrigin(0.5);
+    victoryText.setScrollFactor(0);
+    
+    // Handle continue input
+    const spaceKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    spaceKey?.on('down', () => {
+      this.scene.start('MenuScene');
+    });
+    
+    // Send network event
+    this.gameStore.sendPlayerAction?.({
+      type: 'level_complete',
+      playerId: this.localPlayer.id,
+      finalScore: finalScore,
+      timeBonus: timeBonus
+    });
+  }
+
+  private createUI(): void {
+    const padding = GAME_CONSTANTS.UI_PADDING;
+    
+    // Character display
+    this.characterText = this.add.text(padding, padding, 
+      `Character: ${this.localPlayer.character.toUpperCase()}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.characterText.setScrollFactor(0);
+    
+    // Score display
+    this.scoreText = this.add.text(padding, padding + 40, 
+      `Score: ${this.localPlayer.score}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.scoreText.setScrollFactor(0);
+    
+    // Lives display
+    this.livesText = this.add.text(padding, padding + 80, 
+      `Lives: ${this.localPlayer.lives}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.livesText.setScrollFactor(0);
+    
+    // Fruits collected display
+    this.fruitsText = this.add.text(padding, padding + 120, 
+      `Fruits: ${this.localPlayer.fruitsCollected}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.fruitsText.setScrollFactor(0);
+    
+    // Time display
+    this.timeText = this.add.text(this.cameras.main.width - padding, padding, 
+      `Time: ${GAME_CONSTANTS.LEVEL_TIME_LIMIT}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.timeText.setOrigin(1, 0);
+    this.timeText.setScrollFactor(0);
+    
+    // Players count display
+    this.playersText = this.add.text(this.cameras.main.width - padding, padding + 40, 
+      `Players: ${this.players.size}`, {
+      fontSize: '16px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 }
+    });
+    this.playersText.setOrigin(1, 0);
+    this.playersText.setScrollFactor(0);
+    
+    // Controls display
+    const controlsText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height - padding, 
+      `Controls: WASD/Arrow Keys to move • SPACE/W/UP to jump • Double jump in air • Wall jump when sliding`, {
+      fontSize: '12px',
+      color: '#FFFFFF',
+      backgroundColor: '#000000',
+      padding: { x: 8, y: 4 },
+      align: 'center'
+    });
+    controlsText.setOrigin(0.5, 1);
+    controlsText.setScrollFactor(0);
+  }
+
+  private setupCamera(): void {
+    // Follow the local player
+    this.cameras.main.startFollow(this.localPlayer.sprite);
+    this.cameras.main.setBounds(0, 0, GAME_CONSTANTS.WORLD_WIDTH, GAME_CONSTANTS.WORLD_HEIGHT);
+    
+    // Camera settings for platformer
+    this.cameras.main.setDeadzone(100, 50);
+    this.cameras.main.setLerp(0.1, 0.1);
+  }
+
+  private startGameTimer(): void {
+    this.gameStartTime = Date.now();
+    this.gameTimer = this.time.addEvent({
+      delay: 1000,
+      callback: this.updateGameTime,
+      callbackScope: this,
+      loop: true
+    });
+  }
+
+  private updateGameTime(): void {
+    this.gameTime = Math.floor((Date.now() - this.gameStartTime) / 1000);
+    
+    if (this.gameTime >= GAME_CONSTANTS.LEVEL_TIME_LIMIT) {
+      this.gameTimeUp();
+    }
+  }
+
+  private gameTimeUp(): void {
+    // Time's up - trigger game over
+    this.handleGameOver();
+  }
+
+  private initializeMultiplayer(): void {
+    // Set up multiplayer connections
+    this.gameStore.joinRoom?.('game');
+  }
+
+  private setupNetworkEventHandlers(): void {
+    // Handle network events for multiplayer
+    this.gameStore.onPlayerJoin?.((data: any) => {
+      this.addRemotePlayer(data.playerId, data);
+    });
+    
+    this.gameStore.onPlayerLeave?.((data: any) => {
+      this.removePlayer(data.playerId);
+    });
+    
+    this.gameStore.onPlayerUpdate?.((data: any) => {
+      this.updateRemotePlayer(data.playerId, data);
+    });
+  }
+
+  private setupEventListeners(): void {
+    // ESC key for pause
+    const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    escKey?.on('down', () => {
+      this.scene.pause();
+      this.scene.launch('PauseScene');
+    });
+    
+    // R key for restart
+    const rKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    rKey?.on('down', () => {
+      this.scene.restart();
+    });
+  }
+
+  private handleGameOver(): void {
+    // Stop game timer
+    if (this.gameTimer) {
+      this.gameTimer.destroy();
+    }
+    
+    // Create game over screen
+    const gameOverText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
+      `Game Over!\n\nFinal Score: ${this.localPlayer.score}\nFruits Collected: ${this.localPlayer.fruitsCollected}\n\nPress R to restart or ESC for menu`, {
+      fontSize: '24px',
+      color: '#FF0000',
+      fontStyle: 'bold',
+      align: 'center',
+      backgroundColor: '#000000',
+      padding: { x: 20, y: 20 }
+    });
+    gameOverText.setOrigin(0.5);
+    gameOverText.setScrollFactor(0);
+    
+    // Handle restart input
+    const rKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    rKey?.on('down', () => {
+      this.scene.restart();
+    });
+    
+    // Handle menu input
+    const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    escKey?.on('down', () => {
+      this.scene.start('MenuScene');
+    });
+  }
+
+  update(): void {
+    // Update all players
+    this.players.forEach(player => {
+      player.update();
+    });
+    
+    // Update level system (for trap animations)
+    this.levelSystem.update();
+    
+    // Check trap collisions for all players
+    this.players.forEach(player => {
+      this.levelSystem.checkTrapCollisions(player);
+    });
+    
+    // Update UI
+    this.updateUI();
+    
+    // Send network updates
+    this.sendNetworkUpdates();
+  }
+
+  private updateUI(): void {
+    if (this.localPlayer) {
+      this.scoreText.setText(`Score: ${this.localPlayer.score}`);
+      this.livesText.setText(`Lives: ${this.localPlayer.lives}`);
+      this.fruitsText.setText(`Fruits: ${this.localPlayer.fruitsCollected}`);
+      this.playersText.setText(`Players: ${this.players.size}`);
+      
+      const remainingTime = Math.max(0, GAME_CONSTANTS.LEVEL_TIME_LIMIT - this.gameTime);
+      this.timeText.setText(`Time: ${remainingTime}`);
+      
+      // Change time color when running low
+      if (remainingTime <= 30) {
+        this.timeText.setColor('#FF0000'); // Red when low
+      } else if (remainingTime <= 60) {
+        this.timeText.setColor('#FFA500'); // Orange when medium
+      } else {
+        this.timeText.setColor('#FFFFFF'); // White when normal
+      }
+    }
+  }
+
+  private sendNetworkUpdates(): void {
+    // Send player updates to other players
+    if (this.localPlayer && this.gameStore.sendPlayerUpdate) {
+      this.gameStore.sendPlayerUpdate(this.localPlayer.getNetworkData());
+    }
+  }
+
+  public addRemotePlayer(playerId: string, data: any): void {
+    if (!this.players.has(playerId)) {
+      // Assign character based on player count
+      const playerIndex = this.players.size;
+      const remotePlayer = new Player(this, data.x || 100, data.y || 400, playerId, playerIndex);
+      this.players.set(playerId, remotePlayer);
+      
+      // Set up collisions for new player
+      this.physics.add.collider(remotePlayer.sprite, this.levelSystem.getPlatforms());
+      this.physics.add.collider(remotePlayer.sprite, this.levelSystem.getWalls());
+      this.physics.add.collider(remotePlayer.sprite, this.levelSystem.getBoxes());
+    }
+  }
+
+  public removePlayer(playerId: string): void {
+    const player = this.players.get(playerId);
+    if (player) {
+      player.destroy();
+      this.players.delete(playerId);
+    }
+  }
+
+  public updateRemotePlayer(playerId: string, data: any): void {
+    const player = this.players.get(playerId);
+    if (player && !player.isLocal) {
+      player.updateFromNetwork(data);
+    }
+  }
+
+  public getLocalPlayerData(): any {
+    return this.localPlayer ? this.localPlayer.getNetworkData() : null;
+  }
+} 
