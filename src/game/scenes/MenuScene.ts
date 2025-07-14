@@ -16,6 +16,7 @@ export class MenuScene extends Phaser.Scene {
   private menuTexts: Phaser.GameObjects.Text[] = [];
   private backgroundSprite: Phaser.GameObjects.TileSprite | null = null;
   private showingCharacterSelect: boolean = false;
+  private characterNameText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: 'MenuScene' });
@@ -226,7 +227,7 @@ export class MenuScene extends Phaser.Scene {
 
   private createCharacterPreview(): void {
     const centerX = this.cameras.main.width / 2;
-    const previewY = 550;
+    const previewY = this.cameras.main.height - 200; // Position closer to bottom
     
     // Character preview box
     const previewBox = this.add.graphics();
@@ -235,22 +236,26 @@ export class MenuScene extends Phaser.Scene {
     previewBox.lineStyle(2, 0xFFFFFF);
     previewBox.strokeRoundedRect(centerX - 100, previewY - 50, 200, 100, 10);
     
-    // Character sprite
+    // Create single character sprite that will update
     const characterKey = `${this.selectedCharacter}_idle`;
     if (this.textures.exists(characterKey)) {
-      this.characterPreview = this.add.sprite(centerX - 50, previewY, characterKey);
-      this.characterPreview.setScale(2);
+      this.characterPreview = this.add.sprite(centerX, previewY, characterKey);
+      this.characterPreview.setScale(3); // Make it bigger and centered
+    } else {
+      // Create placeholder if texture doesn't exist
+      this.characterPreview = this.add.rectangle(centerX, previewY, 32, 32, 0xFF69B4) as any;
+      (this.characterPreview as any).setScale(3);
     }
     
-    // Character name
-    this.add.text(centerX + 20, previewY - 20, this.characterNames[this.currentCharacterIndex], {
+    // Character name (this will be updated when character changes)
+    this.characterNameText = this.add.text(centerX, previewY + 35, this.characterNames[this.currentCharacterIndex], {
       fontSize: '16px',
       color: '#FFFFFF',
       fontFamily: 'Arial Black'
     }).setOrigin(0.5);
     
     // Instructions
-    this.add.text(centerX, previewY + 20, 'LEFT/RIGHT: Choose Character', {
+    this.add.text(centerX, previewY + 55, 'LEFT/RIGHT: Choose Character', {
       fontSize: '12px',
       color: '#FFFF00',
       fontFamily: 'Arial'
@@ -317,6 +322,9 @@ export class MenuScene extends Phaser.Scene {
       if (this.textures.exists(characterKey)) {
         this.characterPreview.setTexture(characterKey);
       }
+    }
+    if (this.characterNameText) {
+      this.characterNameText.setText(this.characterNames[this.currentCharacterIndex]);
     }
   }
 
