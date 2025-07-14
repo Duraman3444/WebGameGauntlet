@@ -2,7 +2,7 @@ export const ASSET_ROOTS = {
   SPRITES: 'assets/sprites',
   BACKGROUNDS: 'assets/levels/common/Background',
   BACKGROUNDS_ALT: 'assets/levels/common/backgrounds',
-  TERRAIN: 'assets/levels/common/Terrain',
+  TERRAIN: 'assets/levels/common/terrain',
   TRAPS: 'assets/levels/common/Traps',
   OBJECTS: 'assets/levels/common/objects',
   UI: 'assets/ui',
@@ -17,7 +17,7 @@ export const AssetPaths = {
   
   // Terrain
   terrain: (name: string) => `${ASSET_ROOTS.TERRAIN}/${name}`,
-  seasonalTileset: (season: string) => `${ASSET_ROOTS.TERRAIN}/Seasonal Tilesets/${season}/Tileset.png`,
+  seasonalTileset: (season: string) => `${ASSET_ROOTS.TERRAIN}/Seasonal Tilesets/${season}/Terrain (16 x 16).png`,
   
   // Traps
   trap: (folder: string, file: string) => `${ASSET_ROOTS.TRAPS}/${folder}/${file}`,
@@ -40,7 +40,13 @@ export const AssetPaths = {
   // Sprites (characters, weapons, etc.)
   sprite: (folder: string, file: string) => `${ASSET_ROOTS.SPRITES}/${folder}/${file}`,
   player: (character: string, animation: string) => `${ASSET_ROOTS.SPRITES}/players/Main Characters/${character}/${animation} (32x32).png`,
-  enemy: (name: string) => `${ASSET_ROOTS.SPRITES}/brackeys_platformer_assets/sprites/${name}.png`,
+  enemy: (name: string) => {
+    // Handle different enemy types
+    if (['slime_green', 'slime_purple', 'knight'].includes(name)) {
+      return `${ASSET_ROOTS.SPRITES}/brackeys_platformer_assets/sprites/${name}.png`;
+    }
+    return `${ASSET_ROOTS.SPRITES}/enemies/${name}.png`;
+  },
   
   // Level-specific
   levelAsset: (levelName: string, file: string) => `${ASSET_ROOTS.LEVELS}/${levelName}/${file}`
