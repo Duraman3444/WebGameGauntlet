@@ -34,8 +34,13 @@ export class MapLoader {
       this.mapName = mapName;
       this.loadedMaps.set(mapName, mapGroup);
       
+      // Calculate spawn point inside the map
+      const spawnPoint = this.findOptimalSpawnPoint();
+      
       console.log(`✅ Map loaded successfully: ${mapName}`);
-      return mapGroup;
+      console.log(`📍 Spawn point: ${spawnPoint.x.toFixed(2)}, ${spawnPoint.y.toFixed(2)}, ${spawnPoint.z.toFixed(2)}`);
+      
+      return { mapGroup, spawnPoint };
       
     } catch (error) {
       console.error(`❌ Failed to load map ${mapPath}:`, error);
@@ -208,21 +213,118 @@ export class MapLoader {
     }
   }
 
-  checkCollisionWithMap(position, radius = 1) {
-    const collisions = [];
+  findOptimalSpawnPoint() {
+    if (!this.currentMap) {
+      return new THREE.Vector3(0, 2, 0);
+    }
+
+    const box = new THREE.Box3().setFromObject(this.currentMap);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
     
-    this.mapCollisionMeshes.forEach(mesh => {
-      const distance = mesh.position.distanceTo(position);
-      if (distance < radius) {
-        collisions.push({
-          mesh: mesh,
-          distance: distance,
-          point: mesh.position.clone()
-        });
+    // Try to find a good spawn point inside the map
+    // Start from the center and move upward to find a clear position
+    const spawnPoint = center.clone();
+    spawnPoint.y = box.min.y + size.y * 0.1; // Start slightly above the bottom
+    
+    // Try different positions to find one that's not inside geometry
+    const testPositions = [
+      spawnPoint.clone(),
+      spawnPoint.clone().add(new THREE.Vector3(size.x * 0.2, 0, 0)),
+      spawnPoint.clone().add(new THREE.Vector3(-size.x * 0.2, 0, 0)),
+      spawnPoint.clone().add(new THREE.Vector3(0, 0, size.z * 0.2)),
+      spawnPoint.clone().add(new THREE.Vector3(0, 0, -size.z * 0.2)),
+      spawnPoint.clone().add(new THREE.Vector3(0, size.y * 0.3, 0))
+    ];
+    
+    for (const testPos of testPositions) {
+      if (this.isValidSpawnPosition(testPos)) {
+        return testPos;
       }
-    });
+    }
+    
+    // Fallback to center position raised up
+    return new THREE.Vector3(center.x, center.y + size.y * 0.3, center.z);
+  }
+
+  isValidSpawnPosition(position) {
+    // Simple check to ensure the position is not inside solid geometry
+    const raycaster = new THREE.Raycaster();
+    const directions = [
+      new THREE.Vector3(0, -1, 0), // Down
+      new THREE.Vector3(0, 1, 0),  // Up
+      new THREE.Vector3(1, 0, 0),  // Right
+      new THREE.Vector3(-1, 0, 0), // Left
+      new THREE.Vector3(0, 0, 1),  // Forward
+      new THREE.Vector3(0, 0, -1)  // Backward
+    ];
+    
+    let clearDirections = 0;
+    
+    for (const direction of directions) {
+      raycaster.set(position, direction);
+      const intersections = raycaster.intersectObjects(this.scene.children, true);
+      
+      // If there's no intersection within 1 unit, this direction is clear
+      if (intersections.length === 0 || intersections[0].distance > 1) {
+        clearDirections++;
+      }
+    }
+    
+    // Position is valid if at least 3 directions are clear
+    return clearDirections >= 3;
+  }
+
+  checkCollisionWithMap(position, radius = 0.5) {
+    if (!this.currentMap) return [];
+    
+    const collisions = [];
+    const raycaster = new THREE.Raycaster();
+    
+    // Check collision in multiple directions around the player
+    const directions = [
+      new THREE.Vector3(1, 0, 0),   // Right
+      new THREE.Vector3(-1, 0, 0),  // Left
+      new THREE.Vector3(0, 0, 1),   // Forward
+      new THREE.Vector3(0, 0, -1),  // Backward
+      new THREE.Vector3(0, -1, 0),  // Down
+    ];
+    
+    for (const direction of directions) {
+      raycaster.set(position, direction);
+      const intersections = raycaster.intersectObjects(this.scene.children, true);
+      
+      for (const intersection of intersections) {
+        if (intersection.distance < radius && intersection.object.parent === this.currentMap) {
+          collisions.push({
+            object: intersection.object,
+            point: intersection.point,
+            distance: intersection.distance,
+            normal: intersection.face.normal,
+            direction: direction
+          });
+        }
+      }
+    }
     
     return collisions;
+  }
+
+  getGroundHeight(position) {
+    if (!this.currentMap) return 0;
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.set(position, new THREE.Vector3(0, -1, 0));
+    
+    const intersections = raycaster.intersectObjects(this.scene.children, true);
+    
+    for (const intersection of intersections) {
+      if (intersection.object.parent === this.currentMap) {
+        return intersection.point.y;
+      }
+    }
+    
+    return 0;
   }
 
   getMapSpawnPoints() {

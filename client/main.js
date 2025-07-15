@@ -165,7 +165,18 @@ class MultiplayerGame {
         // Hide default environment and load the first available map
         this.hideDefaultEnvironment();
         const firstMap = availableMaps[0];
-        await this.mapLoader.loadMap(firstMap.path, firstMap.name);
+        const mapResult = await this.mapLoader.loadMap(firstMap.path, firstMap.name);
+        
+        // Position player at the spawn point inside the map
+        if (mapResult.spawnPoint) {
+          this.player.position.copy(mapResult.spawnPoint);
+          this.player.position.y += 1.8; // Add player height
+          console.log(`🎮 Player spawned at: ${this.player.position.x.toFixed(2)}, ${this.player.position.y.toFixed(2)}, ${this.player.position.z.toFixed(2)}`);
+        }
+        
+        // Update lighting for the map environment
+        this.updateLightingForMap();
+        
         console.log(`🎮 Loaded initial map: ${firstMap.name}`);
         
         // Update UI to show map info
@@ -179,6 +190,7 @@ class MultiplayerGame {
       console.log('🎮 Continuing with default environment');
       // Make sure default environment is shown if map loading fails
       this.showDefaultEnvironment();
+      this.player.position.set(0, 1, 0);
     }
   }
 
@@ -515,12 +527,25 @@ class MultiplayerGame {
         // Clear current map and show default environment
         this.mapLoader.clearCurrentMap();
         this.showDefaultEnvironment();
+        // Reset player position to default
+        this.player.position.set(0, 1, 0);
         this.updateMapInfo();
         console.log('🏞️ Switched to default environment');
       } else {
         // Hide default environment and load the selected map
         this.hideDefaultEnvironment();
-        await this.mapLoader.loadMap(mapPath, mapName);
+        const mapResult = await this.mapLoader.loadMap(mapPath, mapName);
+        
+        // Position player at the spawn point inside the map
+        if (mapResult.spawnPoint) {
+          this.player.position.copy(mapResult.spawnPoint);
+          this.player.position.y += 1.8; // Add player height
+          console.log(`🎮 Player spawned at: ${this.player.position.x.toFixed(2)}, ${this.player.position.y.toFixed(2)}, ${this.player.position.z.toFixed(2)}`);
+        }
+        
+        // Update lighting for the map environment
+        this.updateLightingForMap();
+        
         this.updateMapInfo();
         console.log(`🗺️ Switched to map: ${mapName}`);
       }
@@ -535,6 +560,7 @@ class MultiplayerGame {
       console.error('Failed to switch map:', error);
       // If map loading fails, show default environment
       this.showDefaultEnvironment();
+      this.player.position.set(0, 1, 0);
       alert(`Failed to load map: ${mapName}`);
     }
   }
@@ -543,6 +569,20 @@ class MultiplayerGame {
     if (this.mapLoader && this.mapLoader.currentMap) {
       this.mapLoader.clearCurrentMap();
       this.showDefaultEnvironment();
+      this.player.position.set(0, 1, 0);
+      
+      // Reset lighting for default environment
+      this.scene.background = new THREE.Color(0x001122);
+      this.scene.fog = new THREE.Fog(0x001122, 0, 1000);
+      
+      // Reset ambient light intensity
+      const ambientLight = this.scene.children.find(child => 
+        child.type === 'AmbientLight'
+      );
+      if (ambientLight) {
+        ambientLight.intensity = 0.3;
+      }
+      
       this.updateMapInfo();
       
       // Update UI if settings panel is open
@@ -747,6 +787,53 @@ class MultiplayerGame {
     chatInput.focus();
   }
 
+  updateLightingForMap() {
+    if (!this.mapLoader || !this.mapLoader.currentMap) return;
+
+    // Get map bounds to adjust lighting
+    const box = new THREE.Box3().setFromObject(this.mapLoader.currentMap);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Update scene background and fog for map environment
+    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue
+    this.scene.fog = new THREE.Fog(0x87CEEB, size.length() * 0.5, size.length() * 2);
+    
+    // Find and update the directional light
+    const directionalLight = this.scene.children.find(child => 
+      child.type === 'DirectionalLight'
+    );
+    
+    if (directionalLight) {
+      // Position the directional light above the map center
+      directionalLight.position.set(
+        center.x + size.x * 0.3,
+        center.y + size.y * 1.5,
+        center.z + size.z * 0.3
+      );
+      
+      // Update shadow camera to cover the map
+      directionalLight.shadow.camera.left = center.x - size.x;
+      directionalLight.shadow.camera.right = center.x + size.x;
+      directionalLight.shadow.camera.top = center.z + size.z;
+      directionalLight.shadow.camera.bottom = center.z - size.z;
+      directionalLight.shadow.camera.near = 0.1;
+      directionalLight.shadow.camera.far = size.y * 3;
+      directionalLight.shadow.camera.updateProjectionMatrix();
+    }
+    
+    // Increase ambient light for better visibility inside maps
+    const ambientLight = this.scene.children.find(child => 
+      child.type === 'AmbientLight'
+    );
+    
+    if (ambientLight) {
+      ambientLight.intensity = 0.6; // Increased from 0.3
+    }
+    
+    console.log('💡 Lighting updated for map environment');
+  }
+
   updateMovement(deltaTime) {
     if (!this.isPointerLocked) return;
 
@@ -763,12 +850,52 @@ class MultiplayerGame {
     this.direction.normalize();
     this.direction.applyQuaternion(this.player.quaternion);
 
-    // Apply movement
-    this.velocity.x = this.direction.x * speed;
-    this.velocity.z = this.direction.z * speed;
+    // Calculate intended movement
+    const intendedVelocity = this.direction.clone().multiplyScalar(speed);
+    
+    // Apply movement with collision detection
+    this.velocity.x = intendedVelocity.x;
+    this.velocity.z = intendedVelocity.z;
 
-    // Apply gravity
-    this.velocity.y -= 9.8 * deltaTime;
+    // Check for collisions with map geometry
+    if (this.mapLoader && this.mapLoader.currentMap) {
+      const collisions = this.mapLoader.checkCollisionWithMap(this.player.position, 0.8);
+      
+      // Handle horizontal collisions
+      for (const collision of collisions) {
+        if (collision.direction.y === 0) { // Not a vertical collision
+          const pushBack = collision.normal.clone().multiplyScalar(0.8 - collision.distance);
+          this.player.position.add(pushBack);
+          
+          // Stop velocity in the collision direction
+          if (collision.direction.x !== 0) this.velocity.x = 0;
+          if (collision.direction.z !== 0) this.velocity.z = 0;
+        }
+      }
+      
+      // Ground detection for jumping
+      const groundHeight = this.mapLoader.getGroundHeight(this.player.position);
+      const playerGroundLevel = groundHeight + 1.8; // Player height
+      
+      if (this.player.position.y <= playerGroundLevel + 0.1) {
+        this.player.position.y = playerGroundLevel;
+        this.velocity.y = 0;
+        this.canJump = true;
+      } else {
+        // Apply gravity
+        this.velocity.y -= 9.8 * deltaTime;
+        this.canJump = false;
+      }
+    } else {
+      // Default environment - simple ground collision
+      if (this.player.position.y <= 1) {
+        this.player.position.y = 1;
+        this.velocity.y = 0;
+        this.canJump = true;
+      } else {
+        this.velocity.y -= 9.8 * deltaTime;
+      }
+    }
 
     // Jump
     if (this.keys['Space'] && this.canJump) {
@@ -776,15 +903,8 @@ class MultiplayerGame {
       this.canJump = false;
     }
 
-    // Update position
+    // Apply movement
     this.player.position.addScaledVector(this.velocity, deltaTime);
-
-    // Ground collision
-    if (this.player.position.y <= 1) {
-      this.player.position.y = 1;
-      this.velocity.y = 0;
-      this.canJump = true;
-    }
 
     // Send position to server
     if (this.socket) {
@@ -843,12 +963,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (game.mapLoader) {
         try {
           game.hideDefaultEnvironment();
-          await game.mapLoader.loadMap(mapPath, mapName);
+          const mapResult = await game.mapLoader.loadMap(mapPath, mapName);
+          
+          // Position player at the spawn point inside the map
+          if (mapResult.spawnPoint) {
+            game.player.position.copy(mapResult.spawnPoint);
+            game.player.position.y += 1.8; // Add player height
+            console.log(`🎮 Player spawned at: ${game.player.position.x.toFixed(2)}, ${game.player.position.y.toFixed(2)}, ${game.player.position.z.toFixed(2)}`);
+          }
+          
+          // Update lighting for the map environment
+          game.updateLightingForMap();
+          
           game.updateMapInfo();
           console.log(`✅ Map loaded: ${mapName}`);
         } catch (error) {
           console.error(`❌ Failed to load map: ${error.message}`);
           game.showDefaultEnvironment();
+          game.player.position.set(0, 1, 0);
         }
       }
     },
@@ -874,6 +1006,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (game.mapLoader) {
         game.mapLoader.clearCurrentMap();
         game.showDefaultEnvironment();
+        game.player.position.set(0, 1, 0);
         game.updateMapInfo();
         console.log('🗑️ Map cleared');
       }
@@ -884,12 +1017,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (game.mapLoader) {
         try {
           game.hideDefaultEnvironment();
-          await game.mapLoader.loadMap(url, name);
+          const mapResult = await game.mapLoader.loadMap(url, name);
+          
+          // Position player at the spawn point inside the map
+          if (mapResult.spawnPoint) {
+            game.player.position.copy(mapResult.spawnPoint);
+            game.player.position.y += 1.8; // Add player height
+            console.log(`🎮 Player spawned at: ${game.player.position.x.toFixed(2)}, ${game.player.position.y.toFixed(2)}, ${game.player.position.z.toFixed(2)}`);
+          }
+          
+          // Update lighting for the map environment
+          game.updateLightingForMap();
+          
           game.updateMapInfo();
           console.log(`✅ Map loaded from URL: ${name}`);
         } catch (error) {
           console.error(`❌ Failed to load map from URL: ${error.message}`);
           game.showDefaultEnvironment();
+          game.player.position.set(0, 1, 0);
         }
       }
     }
