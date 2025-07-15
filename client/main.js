@@ -32,6 +32,19 @@ class MultiplayerGame {
     this.direction = new THREE.Vector3();
     this.canJump = false;
     
+    // Performance tracking
+    this.lastTime = 0;
+    this.frameCount = 0;
+    this.fps = 0;
+    this.fpsUpdateInterval = 1000; // Update FPS every second
+    this.lastFpsUpdate = 0;
+    
+    // Movement optimization
+    this.moveSpeed = 20;
+    this.jumpSpeed = 15;
+    this.gravity = 30;
+    this.mouseSensitivity = 0.002;
+    
     // Initialize the game
     this.init();
   }
@@ -74,17 +87,25 @@ class MultiplayerGame {
     // Create renderer
     this.renderer = new THREE.WebGLRenderer({
       canvas: document.getElementById('gameCanvas'),
-      antialias: true
+      antialias: true,
+      powerPreference: "high-performance"
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimize for high DPI displays
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-    // Handle window resize
+    // Handle window resize with throttling
+    let resizeTimeout;
     window.addEventListener('resize', () => {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }, 100);
     });
   }
 
@@ -294,8 +315,8 @@ class MultiplayerGame {
 
     document.addEventListener('mousemove', (event) => {
       if (this.isPointerLocked) {
-        this.mouseX -= event.movementX * 0.002;
-        this.mouseY -= event.movementY * 0.002;
+        this.mouseX -= event.movementX * this.mouseSensitivity;
+        this.mouseY -= event.movementY * this.mouseSensitivity;
         this.mouseY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.mouseY));
         
         this.cameraGroup.rotation.y = this.mouseX;
@@ -777,6 +798,43 @@ class MultiplayerGame {
     }
   }
 
+  // Memory management and cleanup
+  dispose() {
+    // Clean up geometries and materials
+    this.scene.traverse((child) => {
+      if (child.geometry) {
+        child.geometry.dispose();
+      }
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(material => material.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+    
+    // Clean up renderer
+    if (this.renderer) {
+      this.renderer.dispose();
+    }
+    
+    // Clear arrays
+    this.gameObjects.length = 0;
+    this.defaultEnvironment.length = 0;
+    
+    // Clean up players
+    Object.values(this.players).forEach(player => {
+      if (player.mesh) {
+        this.scene.remove(player.mesh);
+        if (player.mesh.geometry) player.mesh.geometry.dispose();
+        if (player.mesh.material) player.mesh.material.dispose();
+      }
+    });
+    
+    console.log('🧹 Memory cleanup completed');
+  }
+
   requestPointerLock() {
     const canvas = document.getElementById('gameCanvas');
     canvas.requestPointerLock();
@@ -837,21 +895,22 @@ class MultiplayerGame {
   updateMovement(deltaTime) {
     if (!this.isPointerLocked) return;
 
-    const speed = 20;
-    const jumpHeight = 15;
-    
     this.direction.set(0, 0, 0);
 
-    if (this.keys['KeyW']) this.direction.z -= 1;
-    if (this.keys['KeyS']) this.direction.z += 1;
-    if (this.keys['KeyA']) this.direction.x -= 1;
-    if (this.keys['KeyD']) this.direction.x += 1;
+    // Check for key presses and build movement direction
+    if (this.keys['KeyW'] || this.keys['ArrowUp']) this.direction.z -= 1;
+    if (this.keys['KeyS'] || this.keys['ArrowDown']) this.direction.z += 1;
+    if (this.keys['KeyA'] || this.keys['ArrowLeft']) this.direction.x -= 1;
+    if (this.keys['KeyD'] || this.keys['ArrowRight']) this.direction.x += 1;
 
-    this.direction.normalize();
-    this.direction.applyQuaternion(this.player.quaternion);
+    // Normalize and apply camera rotation for movement direction
+    if (this.direction.length() > 0) {
+      this.direction.normalize();
+      this.direction.applyQuaternion(this.cameraGroup.quaternion);
+    }
 
-    // Calculate intended movement
-    const intendedVelocity = this.direction.clone().multiplyScalar(speed);
+    // Calculate intended movement with improved responsiveness
+    const intendedVelocity = this.direction.clone().multiplyScalar(this.moveSpeed);
     
     // Apply movement with collision detection
     this.velocity.x = intendedVelocity.x;
@@ -883,7 +942,7 @@ class MultiplayerGame {
         this.canJump = true;
       } else {
         // Apply gravity
-        this.velocity.y -= 9.8 * deltaTime;
+        this.velocity.y -= this.gravity * deltaTime;
         this.canJump = false;
       }
     } else {
@@ -893,21 +952,21 @@ class MultiplayerGame {
         this.velocity.y = 0;
         this.canJump = true;
       } else {
-        this.velocity.y -= 9.8 * deltaTime;
+        this.velocity.y -= this.gravity * deltaTime;
       }
     }
 
     // Jump
     if (this.keys['Space'] && this.canJump) {
-      this.velocity.y = jumpHeight;
+      this.velocity.y = this.jumpSpeed;
       this.canJump = false;
     }
 
     // Apply movement
     this.player.position.addScaledVector(this.velocity, deltaTime);
 
-    // Send position to server
-    if (this.socket) {
+    // Send position to server (throttled)
+    if (this.socket && this.frameCount % 3 === 0) {
       this.socket.emit('playerUpdate', {
         position: this.player.position,
         rotation: this.player.rotation
@@ -916,7 +975,9 @@ class MultiplayerGame {
   }
 
   checkCollectibles() {
-    this.gameObjects.forEach(object => {
+    // Use for loop for better performance than forEach
+    for (let i = 0; i < this.gameObjects.length; i++) {
+      const object = this.gameObjects[i];
       if (object.userData.type === 'collectible' && !object.userData.collected) {
         const distance = this.player.position.distanceTo(object.position);
         if (distance < 2) {
@@ -929,24 +990,57 @@ class MultiplayerGame {
           object.scale.multiplyScalar(0.95);
         }
       }
-    });
+    }
   }
 
-  animate() {
-    requestAnimationFrame(() => this.animate());
+  animate(currentTime = 0) {
+    requestAnimationFrame((time) => this.animate(time));
     
-    const deltaTime = 0.016; // Assuming 60 FPS
+    // Calculate delta time
+    const deltaTime = this.lastTime === 0 ? 0.016 : (currentTime - this.lastTime) / 1000;
+    this.lastTime = currentTime;
     
-    this.updateMovement(deltaTime);
+    // Update FPS counter
+    this.frameCount++;
+    if (currentTime - this.lastFpsUpdate >= this.fpsUpdateInterval) {
+      this.fps = Math.round(this.frameCount * 1000 / (currentTime - this.lastFpsUpdate));
+      this.frameCount = 0;
+      this.lastFpsUpdate = currentTime;
+      
+      // Update FPS display
+      const fpsElement = document.getElementById('fps');
+      if (fpsElement) {
+        fpsElement.textContent = `FPS: ${this.fps}`;
+        
+        // Color-code FPS for performance indication
+        if (this.fps >= 50) {
+          fpsElement.style.color = '#2ecc71'; // Green for good performance
+        } else if (this.fps >= 30) {
+          fpsElement.style.color = '#f39c12'; // Yellow for moderate performance
+        } else {
+          fpsElement.style.color = '#e74c3c'; // Red for poor performance
+        }
+      }
+    }
+    
+    // Clamp delta time to prevent large jumps
+    const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30 FPS
+    
+    this.updateMovement(clampedDeltaTime);
     this.checkCollectibles();
     
-    // Animate collectibles
-    this.gameObjects.forEach(object => {
-      if (object.userData.type === 'collectible') {
-        object.rotation.y += 0.02;
-        object.position.y += Math.sin(Date.now() * 0.005) * 0.01;
+    // Animate collectibles with optimized calculations
+    const time = currentTime * 0.001; // Convert to seconds
+    const frameMultiplier = deltaTime / 0.016; // Normalize to 60 FPS
+    
+    // Only animate visible collectibles for performance
+    for (let i = 0; i < this.gameObjects.length; i++) {
+      const object = this.gameObjects[i];
+      if (object.userData.type === 'collectible' && object.visible && !object.userData.collected) {
+        object.rotation.y += 0.02 * frameMultiplier;
+        object.position.y += Math.sin(time * 5) * 0.01 * frameMultiplier;
       }
-    });
+    }
     
     this.renderer.render(this.scene, this.camera);
   }
@@ -955,6 +1049,11 @@ class MultiplayerGame {
 // Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   const game = new MultiplayerGame();
+  
+  // Clean up resources on page unload
+  window.addEventListener('beforeunload', () => {
+    game.dispose();
+  });
   
   // Add global debug commands for testing
   window.gameDebug = {
