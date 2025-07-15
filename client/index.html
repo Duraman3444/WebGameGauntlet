@@ -68,6 +68,12 @@
       color: #f9ca24;
     }
 
+    #characterInfo, #weaponInfo {
+      font-size: 14px;
+      color: #e67e22;
+      margin-top: 5px;
+    }
+
     #mapInfo {
       font-size: 14px;
       color: #9b59b6;
@@ -362,6 +368,90 @@
       font-style: italic;
     }
   </style>
+
+  <style>
+    /* Asset Menu Styles */
+    .asset-menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #3498db;
+      border-radius: 10px;
+      padding: 20px;
+      min-width: 400px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 2000;
+      display: none;
+    }
+
+    .asset-menu h3 {
+      color: #3498db;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .menu-content {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: #3498db;
+      transform: translateY(-2px);
+    }
+
+    .character-preview, .weapon-preview {
+      width: 50px;
+      height: 50px;
+      border-radius: 8px;
+      margin-right: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .character-info, .weapon-info {
+      flex: 1;
+      color: white;
+    }
+
+    .character-info strong, .weapon-info strong {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 5px;
+      color: #3498db;
+    }
+
+    .character-stats, .weapon-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+      color: #bdc3c7;
+    }
+
+    .character-stats span, .weapon-stats span {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+  </style>
 </head>
 <body>
   <div id="loading">Loading Game...</div>
@@ -376,9 +466,27 @@
       <div id="players">Players: 1</div>
       <div id="mapInfo">Map: Default</div>
       <div id="fps">FPS: 0</div>
+      <div id="characterInfo">Character: Soldier</div>
+      <div id="weaponInfo">Weapon: Assault Rifle</div>
     </div>
     
     <div id="crosshair"></div>
+    
+    <!-- Character Menu -->
+    <div id="characterMenu" class="asset-menu">
+      <h3>Select Character</h3>
+      <div class="menu-content">
+        <!-- Character options will be populated by JavaScript -->
+      </div>
+    </div>
+    
+    <!-- Weapon Menu -->
+    <div id="weaponMenu" class="asset-menu">
+      <h3>Select Weapon</h3>
+      <div class="menu-content">
+        <!-- Weapon options will be populated by JavaScript -->
+      </div>
+    </div>
     
     <div id="chat">
       <div id="chatMessages"></div>
@@ -394,6 +502,8 @@
       <p>R - Reload</p>
       <p>Space - Jump</p>
       <p>Mouse Wheel - Zoom camera</p>
+      <p>C - Character menu</p>
+      <p>V - Weapon menu</p>
       <p>Enter - Chat</p>
       <p>ESC - Release mouse</p>
       <p>Tab - Settings</p>

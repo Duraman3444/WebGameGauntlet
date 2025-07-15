@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { io } from 'socket.io-client';
 import { MapLoader } from './MapLoader.js';
+import { AssetManager } from './AssetManager.js';
 
 class MultiplayerGame {
   constructor() {
@@ -100,6 +101,15 @@ class MultiplayerGame {
     this.renderDistance = 200;
     this.cullingEnabled = true;
     
+    // Asset Management
+    this.assetManager = new AssetManager();
+    this.currentCharacter = 'soldier';
+    this.currentWeapon = 'assault_rifle';
+    this.isCharacterMenuOpen = false;
+    this.isWeaponMenuOpen = false;
+    this.selectedCharacterMesh = null;
+    this.selectedWeaponMesh = null;
+    
     // Initialize the game
     this.init();
   }
@@ -109,7 +119,7 @@ class MultiplayerGame {
       this.setupScene();
       this.setupLighting();
       this.createSharedResources();
-      this.setupPlayer();
+      await this.setupPlayer();
       this.setupEnvironment();
       this.setupMapLoader();
       this.setupControls();
@@ -231,31 +241,43 @@ class MultiplayerGame {
     // Point lights will be added only when needed
   }
 
-  setupPlayer() {
-    // Create visible player character
-    this.player = new THREE.Mesh(this.sharedGeometries.player, this.sharedMaterials.player);
-    this.player.position.set(0, 1, 0);
-    this.player.castShadow = true;
-    this.player.receiveShadow = true;
-    this.scene.add(this.player);
+  async setupPlayer() {
+    try {
+      // Load character model
+      this.player = await this.assetManager.loadCharacter(this.currentCharacter);
+      this.player.position.set(0, 1, 0);
+      this.player.castShadow = true;
+      this.player.receiveShadow = true;
+      this.scene.add(this.player);
 
-    // Create weapon and attach to player
-    this.playerWeapon = new THREE.Mesh(this.sharedGeometries.weapon, this.sharedMaterials.weapon);
-    this.playerWeapon.position.set(0.5, 0.3, 0.5);
-    this.playerWeapon.rotation.y = Math.PI / 4;
-    this.playerWeapon.castShadow = true;
-    this.player.add(this.playerWeapon);
+      // Load weapon model and attach to player
+      this.playerWeapon = await this.assetManager.loadWeapon(this.currentWeapon);
+      this.playerWeapon.position.set(0.5, 0.3, 0.5);
+      this.playerWeapon.rotation.y = Math.PI / 4;
+      this.playerWeapon.castShadow = true;
+      this.player.add(this.playerWeapon);
 
-    // Set up third-person camera
-    this.camera.position.set(0, 5, 10);
-    this.cameraTarget.copy(this.player.position);
-    this.cameraTarget.y += 2;
-    this.camera.lookAt(this.cameraTarget);
-    
-    // Initialize camera angles based on current position
-    const direction = new THREE.Vector3().subVectors(this.camera.position, this.player.position).normalize();
-    this.cameraAngle.horizontal = Math.atan2(direction.x, direction.z);
-    this.cameraAngle.vertical = Math.asin(direction.y);
+      // Set up third-person camera
+      this.camera.position.set(0, 5, 10);
+      this.cameraTarget.copy(this.player.position);
+      this.cameraTarget.y += 2;
+      this.camera.lookAt(this.cameraTarget);
+      
+      // Initialize camera angles based on current position
+      const direction = new THREE.Vector3().subVectors(this.camera.position, this.player.position).normalize();
+      this.cameraAngle.horizontal = Math.atan2(direction.x, direction.z);
+      this.cameraAngle.vertical = Math.asin(direction.y);
+      
+      console.log(`✅ Player setup complete with ${this.currentCharacter} and ${this.currentWeapon}`);
+    } catch (error) {
+      console.error('Error setting up player:', error);
+      // Fallback to basic player setup
+      this.player = new THREE.Mesh(this.sharedGeometries.player, this.sharedMaterials.player);
+      this.player.position.set(0, 1, 0);
+      this.player.castShadow = true;
+      this.player.receiveShadow = true;
+      this.scene.add(this.player);
+    }
   }
 
   setupEnvironment() {
@@ -393,6 +415,15 @@ class MultiplayerGame {
       // Reload weapon
       if (event.code === 'KeyR') {
         this.reloadWeapon();
+      }
+      
+      // Menu controls
+      if (event.code === 'KeyC') {
+        this.toggleCharacterMenu();
+      }
+      
+      if (event.code === 'KeyV') {
+        this.toggleWeaponMenu();
       }
     });
 
@@ -857,6 +888,12 @@ class MultiplayerGame {
     this.updateWeaponUI();
     this.updateHealthUI();
     this.updateScoreUI();
+
+    // Create asset menus
+    this.createCharacterMenu();
+    this.createWeaponMenu();
+    this.updateCharacterUI();
+    this.updateWeaponInfoUI();
 
     // Setup settings panel
     this.setupSettingsPanel();
@@ -1601,6 +1638,9 @@ class MultiplayerGame {
     // Clamp delta time to prevent large jumps
     const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30 FPS
     
+    // Update asset manager animations
+    this.assetManager.updateAnimations(clampedDeltaTime);
+    
     this.updateMovement(clampedDeltaTime);
     
     // Update bullet physics
@@ -1659,6 +1699,178 @@ class MultiplayerGame {
       const distance = this.camera.position.distanceTo(player.mesh.position);
       const inFrustum = frustum.intersectsObject(player.mesh);
       player.mesh.visible = inFrustum && distance < this.renderDistance;
+    });
+  }
+
+  // Asset Menu Methods
+  toggleCharacterMenu() {
+    this.isCharacterMenuOpen = !this.isCharacterMenuOpen;
+    const menu = document.getElementById('characterMenu');
+    if (menu) {
+      menu.style.display = this.isCharacterMenuOpen ? 'block' : 'none';
+    }
+  }
+
+  toggleWeaponMenu() {
+    this.isWeaponMenuOpen = !this.isWeaponMenuOpen;
+    const menu = document.getElementById('weaponMenu');
+    if (menu) {
+      menu.style.display = this.isWeaponMenuOpen ? 'block' : 'none';
+    }
+  }
+
+  async selectCharacter(characterId) {
+    try {
+      console.log(`🎮 Selecting character: ${characterId}`);
+      
+      // Remove current player from scene
+      if (this.player) {
+        this.scene.remove(this.player);
+      }
+      
+      // Update current character
+      this.currentCharacter = characterId;
+      
+      // Load new character
+      this.player = await this.assetManager.loadCharacter(characterId);
+      this.player.position.set(0, 1, 0);
+      this.player.castShadow = true;
+      this.player.receiveShadow = true;
+      this.scene.add(this.player);
+      
+      // Update weapon attachment
+      if (this.playerWeapon) {
+        this.player.add(this.playerWeapon);
+        this.playerWeapon.position.set(0.5, 0.3, 0.5);
+        this.playerWeapon.rotation.y = Math.PI / 4;
+      }
+      
+      // Update UI
+      this.updateCharacterUI();
+      
+      // Close menu
+      this.toggleCharacterMenu();
+      
+      console.log(`✅ Character changed to ${characterId}`);
+    } catch (error) {
+      console.error('Error selecting character:', error);
+    }
+  }
+
+  async selectWeapon(weaponId) {
+    try {
+      console.log(`🔫 Selecting weapon: ${weaponId}`);
+      
+      // Remove current weapon from player
+      if (this.playerWeapon) {
+        this.player.remove(this.playerWeapon);
+      }
+      
+      // Update current weapon
+      this.currentWeapon = weaponId;
+      
+      // Load new weapon
+      this.playerWeapon = await this.assetManager.loadWeapon(weaponId);
+      this.playerWeapon.position.set(0.5, 0.3, 0.5);
+      this.playerWeapon.rotation.y = Math.PI / 4;
+      this.playerWeapon.castShadow = true;
+      
+      // Attach to player
+      if (this.player) {
+        this.player.add(this.playerWeapon);
+      }
+      
+      // Update weapon stats
+      const weaponStats = this.assetManager.assets.weapons[weaponId].stats;
+      this.weapon.maxAmmo = weaponStats.ammo;
+      this.weapon.damage = weaponStats.damage;
+      this.weapon.fireRate = weaponStats.fireRate;
+      
+      // Update UI
+      this.updateWeaponUI();
+      
+      // Close menu
+      this.toggleWeaponMenu();
+      
+      console.log(`✅ Weapon changed to ${weaponId}`);
+    } catch (error) {
+      console.error('Error selecting weapon:', error);
+    }
+  }
+
+  updateCharacterUI() {
+    const characterInfo = document.getElementById('characterInfo');
+    if (characterInfo) {
+      const character = this.assetManager.assets.characters[this.currentCharacter];
+      characterInfo.innerHTML = `
+        <strong>${character.name}</strong><br>
+        Health: ${character.stats.health}<br>
+        Speed: ${character.stats.speed}<br>
+        Damage: ${character.stats.damage}
+      `;
+    }
+  }
+
+  updateWeaponInfoUI() {
+    const weaponInfo = document.getElementById('weaponInfo');
+    if (weaponInfo) {
+      const weapon = this.assetManager.assets.weapons[this.currentWeapon];
+      weaponInfo.innerHTML = `
+        <strong>${weapon.name}</strong><br>
+        Damage: ${weapon.stats.damage}<br>
+        Fire Rate: ${weapon.stats.fireRate}<br>
+        Ammo: ${weapon.stats.ammo}<br>
+        Range: ${weapon.stats.range}
+      `;
+    }
+  }
+
+  createCharacterMenu() {
+    const characters = this.assetManager.getCharacterList();
+    const characterMenu = document.getElementById('characterMenu');
+    
+    characters.forEach(character => {
+      const button = document.createElement('button');
+      button.className = 'menu-item';
+      button.innerHTML = `
+        <div class="character-preview" style="background-color: #${character.color.toString(16).padStart(6, '0')}"></div>
+        <div class="character-info">
+          <strong>${character.name}</strong>
+          <div class="character-stats">
+            <span>Health: ${character.stats.health}</span>
+            <span>Speed: ${character.stats.speed}</span>
+            <span>Damage: ${character.stats.damage}</span>
+          </div>
+        </div>
+      `;
+      
+      button.addEventListener('click', () => this.selectCharacter(character.id));
+      characterMenu.appendChild(button);
+    });
+  }
+
+  createWeaponMenu() {
+    const weapons = this.assetManager.getWeaponList();
+    const weaponMenu = document.getElementById('weaponMenu');
+    
+    weapons.forEach(weapon => {
+      const button = document.createElement('button');
+      button.className = 'menu-item';
+      button.innerHTML = `
+        <div class="weapon-preview" style="background-color: #${weapon.color.toString(16).padStart(6, '0')}"></div>
+        <div class="weapon-info">
+          <strong>${weapon.name}</strong>
+          <div class="weapon-stats">
+            <span>Damage: ${weapon.stats.damage}</span>
+            <span>Rate: ${weapon.stats.fireRate}</span>
+            <span>Ammo: ${weapon.stats.ammo}</span>
+            <span>Range: ${weapon.stats.range}</span>
+          </div>
+        </div>
+      `;
+      
+      button.addEventListener('click', () => this.selectWeapon(weapon.id));
+      weaponMenu.appendChild(button);
     });
   }
 }
@@ -1789,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return pos;
     }
   };
-  
+
   // Print available debug commands
   console.log(`
 🎮 Game Debug Commands Available:
