@@ -32,11 +32,34 @@ class MultiplayerGame {
     this.direction = new THREE.Vector3();
     this.canJump = false;
     
+    // Third-person camera variables
+    this.cameraDistance = 8;
+    this.cameraHeight = 3;
+    this.cameraTarget = new THREE.Vector3();
+    this.cameraAngle = { horizontal: 0, vertical: 0 };
+    this.cameraMinDistance = 3;
+    this.cameraMaxDistance = 15;
+    
+    // Shooting system
+    this.weapon = {
+      type: 'rifle',
+      damage: 25,
+      range: 100,
+      fireRate: 600, // rounds per minute
+      ammo: 30,
+      maxAmmo: 30,
+      reloading: false,
+      lastFired: 0
+    };
+    this.projectiles = [];
+    this.isAiming = false;
+    this.crosshair = null;
+    
     // Performance tracking
     this.lastTime = 0;
     this.frameCount = 0;
     this.fps = 0;
-    this.fpsUpdateInterval = 1000; // Update FPS every second
+    this.fpsUpdateInterval = 1000;
     this.lastFpsUpdate = 0;
     
     // Movement optimization
@@ -51,7 +74,9 @@ class MultiplayerGame {
       collectible: null,
       platform: null,
       wall: null,
-      ground: null
+      ground: null,
+      bullet: null,
+      weapon: null
     };
     
     this.sharedMaterials = {
@@ -59,13 +84,16 @@ class MultiplayerGame {
       collectible: null,
       platform: null,
       wall: null,
-      ground: null
+      ground: null,
+      bullet: null,
+      weapon: null
     };
     
     // Object pooling for better performance
     this.objectPool = {
       players: [],
-      collectibles: []
+      collectibles: [],
+      bullets: []
     };
     
     this.maxPoolSize = 20;
@@ -98,25 +126,23 @@ class MultiplayerGame {
   }
 
   createSharedResources() {
-    // Create shared geometries (reuse for all instances)
-    this.sharedGeometries.player = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
-    this.sharedGeometries.collectible = new THREE.SphereGeometry(0.8, 6, 4); // Reduced detail
-    this.sharedGeometries.platform = new THREE.BoxGeometry(8, 1, 8);
-    this.sharedGeometries.wall = new THREE.BoxGeometry(4, 10, 4);
+    // Create shared geometries
+    this.sharedGeometries.player = new THREE.BoxGeometry(1, 2, 1);
+    this.sharedGeometries.collectible = new THREE.SphereGeometry(0.5, 16, 16);
+    this.sharedGeometries.platform = new THREE.BoxGeometry(4, 1, 4);
+    this.sharedGeometries.wall = new THREE.BoxGeometry(1, 3, 1);
     this.sharedGeometries.ground = new THREE.PlaneGeometry(200, 200);
+    this.sharedGeometries.bullet = new THREE.SphereGeometry(0.05, 8, 8);
+    this.sharedGeometries.weapon = new THREE.BoxGeometry(0.3, 0.15, 1.5);
     
-    // Create shared materials (reuse for all instances)
-    this.sharedMaterials.player = new THREE.MeshLambertMaterial({ color: 0x4ecdc4 });
-    this.sharedMaterials.collectible = new THREE.MeshLambertMaterial({ 
-      color: 0xf9ca24,
-      emissive: 0xf9ca24,
-      emissiveIntensity: 0.1 // Reduced for performance
-    });
-    this.sharedMaterials.platform = new THREE.MeshLambertMaterial({ color: 0x34495e });
+    // Create shared materials
+    this.sharedMaterials.player = new THREE.MeshLambertMaterial({ color: 0x4a90e2 });
+    this.sharedMaterials.collectible = new THREE.MeshLambertMaterial({ color: 0xf39c12 });
+    this.sharedMaterials.platform = new THREE.MeshLambertMaterial({ color: 0x95a5a6 });
     this.sharedMaterials.wall = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
     this.sharedMaterials.ground = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
-    
-    console.log('🎯 Created shared resources for optimal performance');
+    this.sharedMaterials.bullet = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+    this.sharedMaterials.weapon = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
   }
 
   setupScene() {
@@ -206,17 +232,30 @@ class MultiplayerGame {
   }
 
   setupPlayer() {
-    // Create player using shared resources
+    // Create visible player character
     this.player = new THREE.Mesh(this.sharedGeometries.player, this.sharedMaterials.player);
     this.player.position.set(0, 1, 0);
     this.player.castShadow = true;
+    this.player.receiveShadow = true;
     this.scene.add(this.player);
 
-    // Create camera group for first-person view
-    this.cameraGroup = new THREE.Group();
-    this.cameraGroup.add(this.camera);
-    this.player.add(this.cameraGroup);
-    this.camera.position.set(0, 0.5, 0);
+    // Create weapon and attach to player
+    this.playerWeapon = new THREE.Mesh(this.sharedGeometries.weapon, this.sharedMaterials.weapon);
+    this.playerWeapon.position.set(0.5, 0.3, 0.5);
+    this.playerWeapon.rotation.y = Math.PI / 4;
+    this.playerWeapon.castShadow = true;
+    this.player.add(this.playerWeapon);
+
+    // Set up third-person camera
+    this.camera.position.set(0, 5, 10);
+    this.cameraTarget.copy(this.player.position);
+    this.cameraTarget.y += 2;
+    this.camera.lookAt(this.cameraTarget);
+    
+    // Initialize camera angles based on current position
+    const direction = new THREE.Vector3().subVectors(this.camera.position, this.player.position).normalize();
+    this.cameraAngle.horizontal = Math.atan2(direction.x, direction.z);
+    this.cameraAngle.vertical = Math.asin(direction.y);
   }
 
   setupEnvironment() {
@@ -350,17 +389,50 @@ class MultiplayerGame {
         event.preventDefault();
         this.focusChat();
       }
+      
+      // Reload weapon
+      if (event.code === 'KeyR') {
+        this.reloadWeapon();
+      }
     });
 
     document.addEventListener('keyup', (event) => {
       this.keys[event.code] = false;
     });
 
-    // Mouse controls
-    document.addEventListener('click', () => {
+    // Mouse controls for third-person camera
+    document.addEventListener('click', (event) => {
       if (!this.isPointerLocked) {
         this.requestPointerLock();
+      } else {
+        // Left click to shoot
+        if (event.button === 0) {
+          this.shoot();
+        }
       }
+    });
+
+    document.addEventListener('mousedown', (event) => {
+      if (this.isPointerLocked) {
+        if (event.button === 0) { // Left click
+          this.shoot();
+        } else if (event.button === 2) { // Right click
+          this.isAiming = true;
+        }
+      }
+    });
+
+    document.addEventListener('mouseup', (event) => {
+      if (this.isPointerLocked) {
+        if (event.button === 2) { // Right click
+          this.isAiming = false;
+        }
+      }
+    });
+
+    // Prevent right-click context menu
+    document.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
     });
 
     document.addEventListener('pointerlockchange', () => {
@@ -369,12 +441,24 @@ class MultiplayerGame {
 
     document.addEventListener('mousemove', (event) => {
       if (this.isPointerLocked) {
-        this.mouseX -= event.movementX * this.mouseSensitivity;
-        this.mouseY -= event.movementY * this.mouseSensitivity;
-        this.mouseY = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.mouseY));
+        // Update camera angles for third-person view
+        this.cameraAngle.horizontal -= event.movementX * this.mouseSensitivity;
+        this.cameraAngle.vertical -= event.movementY * this.mouseSensitivity;
         
-        this.cameraGroup.rotation.y = this.mouseX;
-        this.camera.rotation.x = this.mouseY;
+        // Clamp vertical angle
+        this.cameraAngle.vertical = Math.max(-Math.PI/3, Math.min(Math.PI/3, this.cameraAngle.vertical));
+        
+        this.updateThirdPersonCamera();
+      }
+    });
+
+    // Mouse wheel for camera distance
+    document.addEventListener('wheel', (event) => {
+      if (this.isPointerLocked) {
+        event.preventDefault();
+        this.cameraDistance += event.deltaY * 0.01;
+        this.cameraDistance = Math.max(this.cameraMinDistance, Math.min(this.cameraMaxDistance, this.cameraDistance));
+        this.updateThirdPersonCamera();
       }
     });
 
@@ -384,6 +468,376 @@ class MultiplayerGame {
         document.exitPointerLock();
       }
     });
+  }
+
+  updateThirdPersonCamera() {
+    // Calculate camera position based on angles and distance
+    const horizontalDistance = this.cameraDistance * Math.cos(this.cameraAngle.vertical);
+    const verticalDistance = this.cameraDistance * Math.sin(this.cameraAngle.vertical);
+    
+    // Position camera behind and above player
+    this.cameraTarget.copy(this.player.position);
+    this.cameraTarget.y += 2; // Camera looks at player's upper body
+    
+    this.camera.position.x = this.player.position.x + horizontalDistance * Math.sin(this.cameraAngle.horizontal);
+    this.camera.position.z = this.player.position.z + horizontalDistance * Math.cos(this.cameraAngle.horizontal);
+    this.camera.position.y = this.player.position.y + this.cameraHeight + verticalDistance;
+    
+    this.camera.lookAt(this.cameraTarget);
+  }
+
+  shoot() {
+    if (this.weapon.reloading) return;
+    if (this.weapon.ammo <= 0) {
+      this.reloadWeapon();
+      return;
+    }
+    
+    const currentTime = Date.now();
+    const fireDelay = 60000 / this.weapon.fireRate; // Convert RPM to milliseconds
+    
+    if (currentTime - this.weapon.lastFired < fireDelay) return;
+    
+    this.weapon.lastFired = currentTime;
+    this.weapon.ammo--;
+    
+    // Create bullet
+    const bullet = this.createBullet();
+    this.projectiles.push(bullet);
+    
+    // Update UI
+    this.updateWeaponUI();
+    
+    // Send shooting event to server
+    if (this.socket) {
+      this.socket.emit('playerShoot', {
+        position: this.player.position,
+        direction: this.getShootDirection(),
+        weapon: this.weapon.type
+      });
+    }
+    
+    // Weapon recoil effect
+    this.applyRecoil();
+  }
+
+  createBullet() {
+    const bullet = new THREE.Mesh(this.sharedGeometries.bullet, this.sharedMaterials.bullet);
+    
+    // Position bullet at weapon muzzle
+    const muzzlePosition = new THREE.Vector3();
+    this.playerWeapon.getWorldPosition(muzzlePosition);
+    bullet.position.copy(muzzlePosition);
+    
+    // Set bullet direction
+    bullet.userData.direction = this.getShootDirection();
+    bullet.userData.speed = 100;
+    bullet.userData.damage = this.weapon.damage;
+    bullet.userData.range = this.weapon.range;
+    bullet.userData.distanceTraveled = 0;
+    bullet.userData.shooter = this.playerId;
+    
+    this.scene.add(bullet);
+    return bullet;
+  }
+
+  getShootDirection() {
+    // Calculate shoot direction based on camera look direction
+    const direction = new THREE.Vector3();
+    this.camera.getWorldDirection(direction);
+    return direction.normalize();
+  }
+
+  applyRecoil() {
+    // Simple recoil effect - move camera slightly
+    this.cameraAngle.vertical += (Math.random() - 0.5) * 0.02;
+    this.cameraAngle.horizontal += (Math.random() - 0.5) * 0.01;
+    this.updateThirdPersonCamera();
+  }
+
+  reloadWeapon() {
+    if (this.weapon.reloading || this.weapon.ammo === this.weapon.maxAmmo) return;
+    
+    this.weapon.reloading = true;
+    this.updateWeaponUI();
+    
+    setTimeout(() => {
+      this.weapon.ammo = this.weapon.maxAmmo;
+      this.weapon.reloading = false;
+      this.updateWeaponUI();
+    }, 2000); // 2 second reload time
+  }
+
+  updateWeaponUI() {
+    const ammoElement = document.getElementById('ammo');
+    if (ammoElement) {
+      if (this.weapon.reloading) {
+        ammoElement.textContent = 'Reloading...';
+        ammoElement.style.color = '#f39c12';
+      } else {
+        ammoElement.textContent = `${this.weapon.ammo}/${this.weapon.maxAmmo}`;
+        ammoElement.style.color = this.weapon.ammo === 0 ? '#e74c3c' : '#fff';
+      }
+    }
+  }
+
+  updateBullets(deltaTime) {
+    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      const bullet = this.projectiles[i];
+      
+      // Move bullet
+      const movement = bullet.userData.direction.clone().multiplyScalar(bullet.userData.speed * deltaTime);
+      bullet.position.add(movement);
+      bullet.userData.distanceTraveled += bullet.userData.speed * deltaTime;
+      
+      // Check if bullet exceeded range
+      if (bullet.userData.distanceTraveled >= bullet.userData.range) {
+        this.scene.remove(bullet);
+        this.projectiles.splice(i, 1);
+        continue;
+      }
+      
+      // Check collision with map
+      if (this.mapLoader && this.mapLoader.currentMap) {
+        const collisions = this.mapLoader.checkCollisionWithMap(bullet.position, 0.1);
+        if (collisions.length > 0) {
+          // Bullet hit something
+          this.createBulletImpact(bullet.position);
+          this.scene.remove(bullet);
+          this.projectiles.splice(i, 1);
+          continue;
+        }
+      }
+      
+      // Check collision with other players
+      for (const playerId in this.players) {
+        if (playerId === bullet.userData.shooter) continue;
+        
+        const otherPlayer = this.players[playerId];
+        const distance = bullet.position.distanceTo(otherPlayer.mesh.position);
+        
+        if (distance < 1.5) { // Hit detection radius
+          // Player hit
+          this.handlePlayerHit(playerId, bullet.userData.damage);
+          this.scene.remove(bullet);
+          this.projectiles.splice(i, 1);
+          break;
+        }
+      }
+      
+      // Check collision with ground (fallback)
+      if (bullet.position.y <= 0) {
+        this.createBulletImpact(bullet.position);
+        this.scene.remove(bullet);
+        this.projectiles.splice(i, 1);
+      }
+    }
+  }
+
+  createBulletImpact(position) {
+    // Create a simple spark effect
+    const sparkGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const sparkMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+    
+    spark.position.copy(position);
+    this.scene.add(spark);
+    
+    // Remove spark after a short time
+    setTimeout(() => {
+      this.scene.remove(spark);
+    }, 100);
+  }
+
+  handlePlayerHit(playerId, damage) {
+    console.log(`Player ${playerId} hit for ${damage} damage`);
+    
+    // Send hit event to server
+    if (this.socket) {
+      this.socket.emit('playerHit', {
+        targetId: playerId,
+        damage: damage,
+        shooter: this.playerId
+      });
+    }
+  }
+
+  handlePlayerShoot(data) {
+    // Create visual bullet for other players' shots
+    const otherPlayer = this.players[data.id];
+    if (otherPlayer) {
+      const bullet = new THREE.Mesh(this.sharedGeometries.bullet, this.sharedMaterials.bullet);
+      bullet.position.copy(data.position);
+      bullet.userData.direction = new THREE.Vector3(data.direction.x, data.direction.y, data.direction.z);
+      bullet.userData.speed = 100;
+      bullet.userData.range = 50; // Shorter range for visual bullets
+      bullet.userData.distanceTraveled = 0;
+      bullet.userData.visual = true; // Mark as visual only
+      
+      this.scene.add(bullet);
+      this.projectiles.push(bullet);
+    }
+  }
+
+  handlePlayerHitEvent(data) {
+    if (data.targetId === this.playerId) {
+      // We were hit
+      this.health = data.newHealth;
+      this.updateHealthUI();
+      
+      // Flash red effect
+      this.showDamageEffect();
+      
+      console.log(`You took ${data.damage} damage! Health: ${this.health}`);
+    } else {
+      // Someone else was hit
+      const targetPlayer = this.players[data.targetId];
+      if (targetPlayer) {
+        targetPlayer.health = data.newHealth;
+        // Show damage indicator on target
+        this.showDamageIndicator(targetPlayer.mesh.position);
+      }
+    }
+  }
+
+  handlePlayerDeath(data) {
+    if (data.victim === this.playerId) {
+      // We died
+      this.health = 0;
+      this.updateHealthUI();
+      this.showDeathScreen();
+      console.log(`You were killed by player ${data.killer}`);
+    } else {
+      // Someone else died
+      const victimPlayer = this.players[data.victim];
+      if (victimPlayer) {
+        victimPlayer.health = 0;
+        // Hide player mesh temporarily
+        victimPlayer.mesh.visible = false;
+      }
+      
+      if (data.killer === this.playerId) {
+        // We got a kill
+        this.score += 100;
+        this.updateScoreUI();
+        console.log(`You killed player ${data.victim}! +100 points`);
+      }
+    }
+  }
+
+  handlePlayerRespawn(data) {
+    if (data.id === this.playerId) {
+      // We respawned
+      this.health = data.health;
+      this.player.position.set(data.position.x, data.position.y, data.position.z);
+      this.updateHealthUI();
+      this.hideDeathScreen();
+      console.log('You respawned!');
+    } else {
+      // Someone else respawned
+      const respawnedPlayer = this.players[data.id];
+      if (respawnedPlayer) {
+        respawnedPlayer.health = data.health;
+        respawnedPlayer.mesh.position.set(data.position.x, data.position.y, data.position.z);
+        respawnedPlayer.mesh.visible = true;
+      }
+    }
+  }
+
+  showDamageEffect() {
+    // Create a red overlay effect
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.zIndex = '999';
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+      document.body.removeChild(overlay);
+    }, 200);
+  }
+
+  showDamageIndicator(position) {
+    // Create a damage indicator at the hit position
+    const indicator = document.createElement('div');
+    indicator.textContent = '-25';
+    indicator.style.position = 'absolute';
+    indicator.style.color = '#ff0000';
+    indicator.style.fontSize = '24px';
+    indicator.style.fontWeight = 'bold';
+    indicator.style.pointerEvents = 'none';
+    indicator.style.zIndex = '1000';
+    
+    // Convert 3D position to screen coordinates
+    const screenPosition = position.clone();
+    screenPosition.project(this.camera);
+    
+    const x = (screenPosition.x + 1) / 2 * window.innerWidth;
+    const y = -(screenPosition.y - 1) / 2 * window.innerHeight;
+    
+    indicator.style.left = x + 'px';
+    indicator.style.top = y + 'px';
+    
+    document.body.appendChild(indicator);
+    
+    // Animate and remove
+    let opacity = 1;
+    const fadeOut = setInterval(() => {
+      opacity -= 0.05;
+      indicator.style.opacity = opacity;
+      if (opacity <= 0) {
+        clearInterval(fadeOut);
+        document.body.removeChild(indicator);
+      }
+    }, 50);
+  }
+
+  showDeathScreen() {
+    const deathScreen = document.createElement('div');
+    deathScreen.id = 'deathScreen';
+    deathScreen.style.position = 'fixed';
+    deathScreen.style.top = '0';
+    deathScreen.style.left = '0';
+    deathScreen.style.width = '100%';
+    deathScreen.style.height = '100%';
+    deathScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    deathScreen.style.display = 'flex';
+    deathScreen.style.alignItems = 'center';
+    deathScreen.style.justifyContent = 'center';
+    deathScreen.style.color = '#fff';
+    deathScreen.style.fontSize = '48px';
+    deathScreen.style.fontWeight = 'bold';
+    deathScreen.style.zIndex = '1001';
+    deathScreen.textContent = 'You Died!';
+    
+    document.body.appendChild(deathScreen);
+  }
+
+  hideDeathScreen() {
+    const deathScreen = document.getElementById('deathScreen');
+    if (deathScreen) {
+      document.body.removeChild(deathScreen);
+    }
+  }
+
+  updateHealthUI() {
+    const healthElement = document.getElementById('health');
+    if (healthElement) {
+      healthElement.textContent = `Health: ${this.health}`;
+      healthElement.style.color = this.health > 50 ? '#2ecc71' : this.health > 25 ? '#f39c12' : '#e74c3c';
+    }
+  }
+
+  updateScoreUI() {
+    const scoreElement = document.getElementById('score');
+    if (scoreElement) {
+      scoreElement.textContent = `Score: ${this.score}`;
+    }
   }
 
   setupUI() {
@@ -398,6 +852,11 @@ class MultiplayerGame {
         }
       }
     });
+
+    // Initialize weapon UI
+    this.updateWeaponUI();
+    this.updateHealthUI();
+    this.updateScoreUI();
 
     // Setup settings panel
     this.setupSettingsPanel();
@@ -767,6 +1226,22 @@ class MultiplayerGame {
         this.handlePlayerAction(data);
       });
 
+      this.socket.on('playerShoot', (data) => {
+        this.handlePlayerShoot(data);
+      });
+
+      this.socket.on('playerHit', (data) => {
+        this.handlePlayerHitEvent(data);
+      });
+
+      this.socket.on('playerDeath', (data) => {
+        this.handlePlayerDeath(data);
+      });
+
+      this.socket.on('playerRespawn', (data) => {
+        this.handlePlayerRespawn(data);
+      });
+
       this.socket.on('chatMessage', (data) => {
         this.addChatMessage(data);
       });
@@ -971,10 +1446,18 @@ class MultiplayerGame {
     if (this.keys['KeyA'] || this.keys['ArrowLeft']) this.direction.x -= 1;
     if (this.keys['KeyD'] || this.keys['ArrowRight']) this.direction.x += 1;
 
-    // Normalize and apply camera rotation for movement direction
+    // Normalize movement direction
     if (this.direction.length() > 0) {
       this.direction.normalize();
-      this.direction.applyQuaternion(this.cameraGroup.quaternion);
+      
+      // For third-person, apply camera rotation to movement direction
+      const cameraRotation = new THREE.Quaternion();
+      cameraRotation.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.cameraAngle.horizontal);
+      this.direction.applyQuaternion(cameraRotation);
+      
+      // Rotate player to face movement direction
+      const targetRotation = Math.atan2(this.direction.x, this.direction.z);
+      this.player.rotation.y = targetRotation;
     }
 
     // Calculate intended movement with improved responsiveness
@@ -1045,6 +1528,9 @@ class MultiplayerGame {
 
     // Apply movement
     this.player.position.addScaledVector(this.velocity, deltaTime);
+    
+    // Update third-person camera to follow player
+    this.updateThirdPersonCamera();
 
     // Check if player is falling through the map (emergency check)
     if (this.mapLoader && this.mapLoader.currentMap && this.player.position.y < -50) {
@@ -1116,6 +1602,9 @@ class MultiplayerGame {
     const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30 FPS
     
     this.updateMovement(clampedDeltaTime);
+    
+    // Update bullet physics
+    this.updateBullets(clampedDeltaTime);
     
     // Optimize collision and animation checks (only every 3rd frame)
     if (this.frameCount % 3 === 0) {

@@ -98,6 +98,67 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Handle player shooting
+  socket.on('playerShoot', (data) => {
+    // Broadcast shooting event to all other players
+    socket.broadcast.emit('playerShoot', {
+      id: socket.id,
+      position: data.position,
+      direction: data.direction,
+      weapon: data.weapon,
+      timestamp: Date.now()
+    });
+  });
+
+  // Handle player hits
+  socket.on('playerHit', (data) => {
+    const targetPlayer = gameState.players[data.targetId];
+    if (targetPlayer) {
+      // Apply damage
+      targetPlayer.health -= data.damage;
+      
+      // Check if player is dead
+      if (targetPlayer.health <= 0) {
+        targetPlayer.health = 0;
+        
+        // Award points to shooter
+        if (gameState.players[data.shooter]) {
+          gameState.players[data.shooter].score += 100;
+        }
+        
+        // Broadcast player death
+        io.emit('playerDeath', {
+          victim: data.targetId,
+          killer: data.shooter,
+          timestamp: Date.now()
+        });
+        
+        // Respawn player after delay
+        setTimeout(() => {
+          if (gameState.players[data.targetId]) {
+            gameState.players[data.targetId].health = 100;
+            gameState.players[data.targetId].position = { x: 0, y: 1, z: 0 };
+            
+            io.emit('playerRespawn', {
+              id: data.targetId,
+              position: { x: 0, y: 1, z: 0 },
+              health: 100
+            });
+          }
+        }, 3000); // 3 second respawn delay
+      }
+      
+      // Broadcast hit event
+      io.emit('playerHit', {
+        targetId: data.targetId,
+        damage: data.damage,
+        shooter: data.shooter,
+        newHealth: targetPlayer.health,
+        timestamp: Date.now()
+      });
+    }
+  });
+
   // Handle chat messages
   socket.on('chatMessage', (message) => {
     io.emit('chatMessage', {
