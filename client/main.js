@@ -110,6 +110,11 @@ class MultiplayerGame {
     this.selectedCharacterMesh = null;
     this.selectedWeaponMesh = null;
     
+    // Keyboard navigation for menus
+    this.characterMenuSelectedIndex = 0;
+    this.weaponMenuSelectedIndex = 0;
+    this.menuKeyboardHandler = null;
+    
     // Initialize the game
     this.init();
   }
@@ -1725,6 +1730,13 @@ class MultiplayerGame {
     const menu = document.getElementById('characterMenu');
     if (menu) {
       menu.style.display = this.isCharacterMenuOpen ? 'block' : 'none';
+      
+      if (this.isCharacterMenuOpen) {
+        this.setupMenuKeyboardNavigation('character');
+        this.updateMenuSelection('character');
+      } else {
+        this.removeMenuKeyboardNavigation();
+      }
     }
   }
 
@@ -1733,6 +1745,90 @@ class MultiplayerGame {
     const menu = document.getElementById('weaponMenu');
     if (menu) {
       menu.style.display = this.isWeaponMenuOpen ? 'block' : 'none';
+      
+      if (this.isWeaponMenuOpen) {
+        this.setupMenuKeyboardNavigation('weapon');
+        this.updateMenuSelection('weapon');
+      } else {
+        this.removeMenuKeyboardNavigation();
+      }
+    }
+  }
+
+  // Keyboard Navigation Helper Functions
+  setupMenuKeyboardNavigation(menuType) {
+    this.removeMenuKeyboardNavigation();
+    
+    this.menuKeyboardHandler = (event) => {
+      const isCharacterMenu = menuType === 'character';
+      const menuItems = document.querySelectorAll(`#${menuType}Menu .menu-item`);
+      const currentIndex = isCharacterMenu ? this.characterMenuSelectedIndex : this.weaponMenuSelectedIndex;
+      
+      switch(event.code) {
+        case 'ArrowUp':
+          event.preventDefault();
+          if (isCharacterMenu) {
+            this.characterMenuSelectedIndex = Math.max(0, currentIndex - 1);
+          } else {
+            this.weaponMenuSelectedIndex = Math.max(0, currentIndex - 1);
+          }
+          this.updateMenuSelection(menuType);
+          break;
+          
+        case 'ArrowDown':
+          event.preventDefault();
+          if (isCharacterMenu) {
+            this.characterMenuSelectedIndex = Math.min(menuItems.length - 1, currentIndex + 1);
+          } else {
+            this.weaponMenuSelectedIndex = Math.min(menuItems.length - 1, currentIndex + 1);
+          }
+          this.updateMenuSelection(menuType);
+          break;
+          
+        case 'Enter':
+          event.preventDefault();
+          this.selectMenuItemByIndex(menuType, currentIndex);
+          break;
+          
+        case 'Escape':
+          event.preventDefault();
+          if (isCharacterMenu) {
+            this.toggleCharacterMenu();
+          } else {
+            this.toggleWeaponMenu();
+          }
+          break;
+      }
+    };
+    
+    document.addEventListener('keydown', this.menuKeyboardHandler);
+  }
+  
+  removeMenuKeyboardNavigation() {
+    if (this.menuKeyboardHandler) {
+      document.removeEventListener('keydown', this.menuKeyboardHandler);
+      this.menuKeyboardHandler = null;
+    }
+  }
+  
+  updateMenuSelection(menuType) {
+    const menuItems = document.querySelectorAll(`#${menuType}Menu .menu-item`);
+    const selectedIndex = menuType === 'character' ? this.characterMenuSelectedIndex : this.weaponMenuSelectedIndex;
+    
+    menuItems.forEach((item, index) => {
+      if (index === selectedIndex) {
+        item.classList.add('selected');
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
+  }
+  
+  selectMenuItemByIndex(menuType, index) {
+    const menuItems = document.querySelectorAll(`#${menuType}Menu .menu-item`);
+    if (menuItems[index]) {
+      menuItems[index].click();
     }
   }
 
@@ -1858,7 +1954,7 @@ class MultiplayerGame {
     const characters = this.assetManager.getCharacterList();
     const characterMenu = document.getElementById('characterMenu');
     
-    characters.forEach(character => {
+    characters.forEach((character, index) => {
       const button = document.createElement('button');
       button.className = 'menu-item';
       button.innerHTML = `
@@ -1873,7 +1969,16 @@ class MultiplayerGame {
         </div>
       `;
       
-      button.addEventListener('click', () => this.selectCharacter(character.id));
+      button.addEventListener('click', () => {
+        this.characterMenuSelectedIndex = index;
+        this.selectCharacter(character.id);
+      });
+      
+      button.addEventListener('mouseenter', () => {
+        this.characterMenuSelectedIndex = index;
+        this.updateMenuSelection('character');
+      });
+      
       characterMenu.appendChild(button);
     });
   }
@@ -1882,7 +1987,7 @@ class MultiplayerGame {
     const weapons = this.assetManager.getWeaponList();
     const weaponMenu = document.getElementById('weaponMenu');
     
-    weapons.forEach(weapon => {
+    weapons.forEach((weapon, index) => {
       const button = document.createElement('button');
       button.className = 'menu-item';
       button.innerHTML = `
@@ -1898,7 +2003,16 @@ class MultiplayerGame {
         </div>
       `;
       
-      button.addEventListener('click', () => this.selectWeapon(weapon.id));
+      button.addEventListener('click', () => {
+        this.weaponMenuSelectedIndex = index;
+        this.selectWeapon(weapon.id);
+      });
+      
+      button.addEventListener('mouseenter', () => {
+        this.weaponMenuSelectedIndex = index;
+        this.updateMenuSelection('weapon');
+      });
+      
       weaponMenu.appendChild(button);
     });
   }

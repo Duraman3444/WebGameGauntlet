@@ -418,6 +418,17 @@
       transform: translateY(-2px);
     }
 
+    .menu-item.selected {
+      background: rgba(52, 152, 219, 0.3);
+      border-color: #3498db;
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+    }
+
+    .menu-item.selected:hover {
+      background: rgba(52, 152, 219, 0.4);
+    }
+
     .character-preview, .weapon-preview {
       width: 50px;
       height: 50px;
@@ -504,6 +515,9 @@
       <p>Mouse Wheel - Zoom camera</p>
       <p>C - Character menu</p>
       <p>V - Weapon menu</p>
+      <p>↑/↓ - Navigate menus</p>
+      <p>Enter - Select menu item</p>
+      <p>Esc - Close menu</p>
       <p>Enter - Chat</p>
       <p>ESC - Release mouse</p>
       <p>Tab - Settings</p>
