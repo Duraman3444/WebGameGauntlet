@@ -427,7 +427,7 @@ class MultiplayerGame {
     document.addEventListener('keydown', (event) => {
       this.keys[event.code] = true;
       
-      if (event.code === 'Enter') {
+      if (event.code === 'Comma') {
         event.preventDefault();
         this.focusChat();
       }
