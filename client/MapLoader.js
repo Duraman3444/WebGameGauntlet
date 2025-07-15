@@ -260,112 +260,35 @@ export class MapLoader {
   }
 
   async loadAvailableMaps() {
-    const availableMaps = [];
-    
-    // Common map filenames to look for
-    const mapFiles = [
-      'map.glb',
-      'level.glb',
-      'scene.glb',
-      'dust2.glb',
-      'de_dust2_-_cs_map.glb',
-      'shipment.glb',
-      'nuketown.glb',
-      'test.glb'
-    ];
-    
-    // Check each file individually
-    for (const filename of mapFiles) {
-      try {
-        const response = await fetch(`/maps/${filename}`, { method: 'HEAD' });
-        if (response.ok && response.status === 200) {
-          const contentLength = response.headers.get('content-length');
-          const contentType = response.headers.get('content-type');
-          
-          // Only add if it's actually a GLB file (not HTML from SPA routing)
-          if (contentType && 
-              (contentType.includes('gltf') || 
-               contentType.includes('octet-stream') || 
-               contentType.includes('application/octet-stream')) &&
-              !contentType.includes('text/html') &&
-              contentLength && 
-              parseInt(contentLength) > 100) { // Must be larger than 100 bytes
-            availableMaps.push({
-              name: filename.replace('.glb', ''),
-              path: `/maps/${filename}`,
-              size: contentLength ? parseInt(contentLength) : 0,
-              filename: filename
-            });
-          } else {
-            console.log(`📂 Skipping ${filename}: Invalid content type (${contentType}) or size (${contentLength})`);
-          }
-        } else {
-          console.log(`📂 Skipping ${filename}: HTTP ${response.status}`);
-        }
-      } catch (error) {
-        // File doesn't exist or can't be accessed, skip it
-        console.log(`📂 Skipping ${filename}: ${error.message}`);
-      }
-    }
-    
-    // Also try to discover any other .glb files in the maps directory
-    await this.discoverAdditionalMaps(availableMaps);
-    
-    console.log(`📂 Found ${availableMaps.length} available maps:`, availableMaps);
-    return availableMaps;
-  }
-
-  async discoverAdditionalMaps(availableMaps) {
-    // Try to find additional GLB files beyond the common ones
-    const additionalFiles = [
-      'mirage.glb',
-      'rust.glb',
-      'inferno.glb',
-      'cache.glb',
-      'overpass.glb',
-      'cs_dust2.glb',
-      'de_dust2.glb',
-      'cs_office.glb',
-      'de_mirage.glb',
-      'de_inferno.glb',
-      'de_cache.glb',
-      'cod_shipment.glb',
-      'cod_nuketown.glb',
-      'cod_rust.glb'
-    ];
-    
-    for (const filename of additionalFiles) {
-      // Skip if we already have this file
-      if (availableMaps.some(map => map.filename === filename)) {
-        continue;
+    try {
+      console.log('🔍 Fetching available maps from server...');
+      const response = await fetch('http://localhost:3001/api/maps');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      try {
-        const response = await fetch(`/maps/${filename}`, { method: 'HEAD' });
-        if (response.ok && response.status === 200) {
-          const contentLength = response.headers.get('content-length');
-          const contentType = response.headers.get('content-type');
-          
-          if (contentType && 
-              (contentType.includes('gltf') || 
-               contentType.includes('octet-stream') || 
-               contentType.includes('application/octet-stream')) &&
-              !contentType.includes('text/html') &&
-              contentLength && 
-              parseInt(contentLength) > 100) {
-            availableMaps.push({
-              name: filename.replace('.glb', ''),
-              path: `/maps/${filename}`,
-              size: contentLength ? parseInt(contentLength) : 0,
-              filename: filename
-            });
-          }
-        }
-      } catch (error) {
-        // File doesn't exist, continue
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch maps');
       }
+      
+      const availableMaps = data.maps || [];
+      
+      console.log(`📂 Found ${availableMaps.length} available maps:`, availableMaps);
+      return availableMaps;
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch maps from server:', error);
+      
+      // Fallback to empty array if server endpoint fails
+      console.log('🔄 Using empty map list as fallback');
+      return [];
     }
   }
+
+
 
   getCurrentMapInfo() {
     return {

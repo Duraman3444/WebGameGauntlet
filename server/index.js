@@ -2,12 +2,13 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
+const fs = require('fs').promises;
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:3002"],
     methods: ["GET", "POST"]
   }
 });
@@ -20,9 +21,29 @@ const gameState = {
   time: Date.now()
 };
 
+// CORS middleware for Express routes
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = ['http://localhost:3000', 'http://localhost:3002'];
+  
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Serve static files
 app.use(express.static(path.join(__dirname, '../dist')));
 app.use('/public', express.static(path.join(__dirname, '../public')));
+app.use('/maps', express.static(path.join(__dirname, '../public/maps')));
 
 // Handle Socket.io connections
 io.on('connection', (socket) => {
@@ -115,6 +136,53 @@ function getRandomColor() {
   const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6c5ce7', '#a29bfe'];
   return colors[Math.floor(Math.random() * colors.length)];
 }
+
+// Maps endpoint - dynamically scan maps directory
+app.get('/api/maps', async (req, res) => {
+  try {
+    const mapsDir = path.join(__dirname, '../public/maps');
+    const files = await fs.readdir(mapsDir);
+    
+    // Filter for .glb files and get their stats
+    const mapFiles = [];
+    for (const file of files) {
+      if (file.toLowerCase().endsWith('.glb')) {
+        try {
+          const filePath = path.join(mapsDir, file);
+          const stats = await fs.stat(filePath);
+          
+          mapFiles.push({
+            name: file.replace('.glb', ''),
+            filename: file,
+            path: `/maps/${file}`,
+            size: stats.size,
+            modified: stats.mtime
+          });
+        } catch (error) {
+          console.warn(`Warning: Could not get stats for ${file}:`, error.message);
+        }
+      }
+    }
+    
+    // Sort by modification time (newest first)
+    mapFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+    
+    res.json({
+      success: true,
+      maps: mapFiles,
+      count: mapFiles.length
+    });
+    
+  } catch (error) {
+    console.error('Error scanning maps directory:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to scan maps directory',
+      maps: [],
+      count: 0
+    });
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
