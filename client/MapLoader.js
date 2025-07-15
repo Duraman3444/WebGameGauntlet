@@ -149,8 +149,14 @@ export class MapLoader {
     // Different scaling based on map name/type
     const scaleFactors = {
       'dust2': 0.1,
+      'de_dust2_-_cs_map': 0.1,
+      'de_dust2': 0.1,
+      'cs_dust2': 0.1,
       'shipment': 0.08,
       'nuketown': 0.12,
+      'mirage': 0.1,
+      'inferno': 0.1,
+      'cache': 0.1,
       'default': 0.1
     };
     
@@ -262,6 +268,7 @@ export class MapLoader {
       'level.glb',
       'scene.glb',
       'dust2.glb',
+      'de_dust2_-_cs_map.glb',
       'shipment.glb',
       'nuketown.glb',
       'test.glb'
@@ -315,7 +322,16 @@ export class MapLoader {
       'rust.glb',
       'inferno.glb',
       'cache.glb',
-      'overpass.glb'
+      'overpass.glb',
+      'cs_dust2.glb',
+      'de_dust2.glb',
+      'cs_office.glb',
+      'de_mirage.glb',
+      'de_inferno.glb',
+      'de_cache.glb',
+      'cod_shipment.glb',
+      'cod_nuketown.glb',
+      'cod_rust.glb'
     ];
     
     for (const filename of additionalFiles) {
