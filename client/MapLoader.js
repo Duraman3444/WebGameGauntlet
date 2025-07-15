@@ -94,21 +94,37 @@ export class MapLoader {
       if (child.isMesh) {
         // Optimize materials for performance
         if (child.material) {
-          // Enable shadow receiving
+          // Reduce shadow casting for better performance
           child.receiveShadow = true;
-          child.castShadow = true;
+          child.castShadow = false; // Disable shadow casting for map objects
           
           // Optimize material properties
           if (child.material.map) {
             child.material.map.generateMipmaps = false;
             child.material.map.minFilter = THREE.LinearFilter;
             child.material.map.magFilter = THREE.LinearFilter;
+            child.material.map.anisotropy = 1; // Reduce anisotropic filtering
           }
           
           // Enable vertex colors if available
           if (child.geometry.attributes.color) {
             child.material.vertexColors = true;
           }
+          
+          // Optimize material for performance
+          if (child.material.normalMap) {
+            child.material.normalMap.generateMipmaps = false;
+          }
+          
+          // Reduce material complexity
+          child.material.transparent = false;
+          child.material.alphaTest = 0;
+        }
+        
+        // Optimize geometry
+        if (child.geometry) {
+          child.geometry.computeBoundingSphere();
+          child.geometry.computeBoundingBox();
         }
       }
     });

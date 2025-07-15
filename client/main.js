@@ -45,6 +45,33 @@ class MultiplayerGame {
     this.gravity = 30;
     this.mouseSensitivity = 0.002;
     
+    // Performance optimization - shared resources
+    this.sharedGeometries = {
+      player: null,
+      collectible: null,
+      platform: null,
+      wall: null,
+      ground: null
+    };
+    
+    this.sharedMaterials = {
+      player: null,
+      collectible: null,
+      platform: null,
+      wall: null,
+      ground: null
+    };
+    
+    // Object pooling for better performance
+    this.objectPool = {
+      players: [],
+      collectibles: []
+    };
+    
+    this.maxPoolSize = 20;
+    this.renderDistance = 200;
+    this.cullingEnabled = true;
+    
     // Initialize the game
     this.init();
   }
@@ -53,6 +80,7 @@ class MultiplayerGame {
     try {
       this.setupScene();
       this.setupLighting();
+      this.createSharedResources();
       this.setupPlayer();
       this.setupEnvironment();
       this.setupMapLoader();
@@ -67,6 +95,28 @@ class MultiplayerGame {
     } catch (error) {
       console.error('Failed to initialize game:', error);
     }
+  }
+
+  createSharedResources() {
+    // Create shared geometries (reuse for all instances)
+    this.sharedGeometries.player = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+    this.sharedGeometries.collectible = new THREE.SphereGeometry(0.8, 6, 4); // Reduced detail
+    this.sharedGeometries.platform = new THREE.BoxGeometry(8, 1, 8);
+    this.sharedGeometries.wall = new THREE.BoxGeometry(4, 10, 4);
+    this.sharedGeometries.ground = new THREE.PlaneGeometry(200, 200);
+    
+    // Create shared materials (reuse for all instances)
+    this.sharedMaterials.player = new THREE.MeshLambertMaterial({ color: 0x4ecdc4 });
+    this.sharedMaterials.collectible = new THREE.MeshLambertMaterial({ 
+      color: 0xf9ca24,
+      emissive: 0xf9ca24,
+      emissiveIntensity: 0.1 // Reduced for performance
+    });
+    this.sharedMaterials.platform = new THREE.MeshLambertMaterial({ color: 0x34495e });
+    this.sharedMaterials.wall = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
+    this.sharedMaterials.ground = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
+    
+    console.log('🎯 Created shared resources for optimal performance');
   }
 
   setupScene() {
@@ -84,18 +134,33 @@ class MultiplayerGame {
     );
     this.camera.position.set(0, 5, 10);
 
-    // Create renderer
+    // Create renderer with aggressive optimizations
     this.renderer = new THREE.WebGLRenderer({
       canvas: document.getElementById('gameCanvas'),
-      antialias: true,
-      powerPreference: "high-performance"
+      antialias: false, // Disable for better performance
+      powerPreference: "high-performance",
+      stencil: false,
+      depth: true,
+      alpha: false
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Optimize for high DPI displays
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduce for better performance
+    
+    // Optimize rendering settings
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.BasicShadowMap; // Use basic shadows for better performance
+    this.renderer.shadowMap.autoUpdate = false; // Manual shadow updates
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-
+    
+    // Performance optimizations
+    this.renderer.sortObjects = false; // Disable automatic sorting for better performance
+    this.renderer.setAnimationLoop = null; // Use manual animation loop
+    this.renderer.info.autoReset = false; // Disable automatic info reset
+    
+    // Culling optimizations
+    this.renderer.localClippingEnabled = false;
+    this.renderer.gammaFactor = 2.2;
+    
     // Handle window resize with throttling
     let resizeTimeout;
     window.addEventListener('resize', () => {
@@ -104,46 +169,45 @@ class MultiplayerGame {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       }, 100);
     });
   }
 
   setupLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+    // Ambient light - increase to reduce dependency on shadows
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.7);
     this.scene.add(ambientLight);
 
-    // Directional light (sun)
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // Directional light (sun) - optimized for performance
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
     directionalLight.position.set(100, 100, 50);
     directionalLight.castShadow = true;
-    directionalLight.shadow.camera.left = -50;
-    directionalLight.shadow.camera.right = 50;
-    directionalLight.shadow.camera.top = 50;
-    directionalLight.shadow.camera.bottom = -50;
+    
+    // Optimize shadow settings for performance
+    directionalLight.shadow.camera.left = -30;
+    directionalLight.shadow.camera.right = 30;
+    directionalLight.shadow.camera.top = 30;
+    directionalLight.shadow.camera.bottom = -30;
     directionalLight.shadow.camera.near = 0.1;
-    directionalLight.shadow.camera.far = 200;
-    directionalLight.shadow.mapSize.width = 2048;
-    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.far = 100;
+    directionalLight.shadow.mapSize.width = 1024; // Reduced from 2048
+    directionalLight.shadow.mapSize.height = 1024;
+    directionalLight.shadow.radius = 4;
+    directionalLight.shadow.bias = -0.0001;
     this.scene.add(directionalLight);
 
-    // Point lights for atmosphere
-    const pointLight1 = new THREE.PointLight(0x4ecdc4, 0.5, 50);
-    pointLight1.position.set(10, 10, 10);
-    this.scene.add(pointLight1);
-
-    const pointLight2 = new THREE.PointLight(0xff6b6b, 0.5, 50);
-    pointLight2.position.set(-10, 10, -10);
-    this.scene.add(pointLight2);
+    // Store references for optimization
+    this.ambientLight = ambientLight;
+    this.directionalLight = directionalLight;
+    
+    // Remove expensive point lights for better performance
+    // Point lights will be added only when needed
   }
 
   setupPlayer() {
-    // Create player geometry and material
-    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
-    const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x4ecdc4 });
-    
-    this.player = new THREE.Mesh(playerGeometry, playerMaterial);
+    // Create player using shared resources
+    this.player = new THREE.Mesh(this.sharedGeometries.player, this.sharedMaterials.player);
     this.player.position.set(0, 1, 0);
     this.player.castShadow = true;
     this.scene.add(this.player);
@@ -156,10 +220,8 @@ class MultiplayerGame {
   }
 
   setupEnvironment() {
-    // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(200, 200);
-    const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    // Create ground using shared resources
+    const ground = new THREE.Mesh(this.sharedGeometries.ground, this.sharedMaterials.ground);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     ground.userData = { isDefaultEnvironment: true };
@@ -216,20 +278,15 @@ class MultiplayerGame {
   }
 
   createPlatforms() {
-    const platformGeometry = new THREE.BoxGeometry(8, 1, 8);
-    const platformMaterial = new THREE.MeshLambertMaterial({ color: 0x34495e });
-
-    // Create several platforms
+    // Create fewer platforms using shared resources for better performance
     const platformPositions = [
       { x: 20, y: 2, z: 0 },
       { x: -20, y: 4, z: 20 },
-      { x: 0, y: 6, z: -30 },
-      { x: 30, y: 3, z: 30 },
-      { x: -30, y: 5, z: -20 }
+      { x: 0, y: 6, z: -30 }
     ];
 
     platformPositions.forEach(pos => {
-      const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+      const platform = new THREE.Mesh(this.sharedGeometries.platform, this.sharedMaterials.platform);
       platform.position.set(pos.x, pos.y, pos.z);
       platform.castShadow = true;
       platform.receiveShadow = true;
@@ -239,14 +296,11 @@ class MultiplayerGame {
       this.gameObjects.push(platform);
     });
 
-    // Create walls for boundaries
-    const wallGeometry = new THREE.BoxGeometry(4, 10, 4);
-    const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
-    
-    for (let i = 0; i < 12; i++) {
-      const angle = (i / 12) * Math.PI * 2;
+    // Create fewer walls for boundaries using shared resources
+    for (let i = 0; i < 8; i++) { // Reduced from 12 to 8
+      const angle = (i / 8) * Math.PI * 2;
       const radius = 80;
-      const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+      const wall = new THREE.Mesh(this.sharedGeometries.wall, this.sharedMaterials.wall);
       wall.position.x = Math.cos(angle) * radius;
       wall.position.z = Math.sin(angle) * radius;
       wall.position.y = 5;
@@ -260,16 +314,9 @@ class MultiplayerGame {
   }
 
   createCollectibles() {
-    const collectibleGeometry = new THREE.SphereGeometry(0.8, 8, 6);
-    const collectibleMaterial = new THREE.MeshLambertMaterial({ 
-      color: 0xf9ca24,
-      emissive: 0xf9ca24,
-      emissiveIntensity: 0.2
-    });
-
-    // Create collectibles around the map
-    for (let i = 0; i < 15; i++) {
-      const collectible = new THREE.Mesh(collectibleGeometry, collectibleMaterial);
+    // Create fewer collectibles using shared resources for better performance
+    for (let i = 0; i < 8; i++) { // Reduced from 15 to 8
+      const collectible = new THREE.Mesh(this.sharedGeometries.collectible, this.sharedMaterials.collectible);
       collectible.position.set(
         (Math.random() - 0.5) * 120,
         2 + Math.random() * 8,
@@ -394,6 +441,8 @@ class MultiplayerGame {
     // Settings checkboxes
     const showCollisionMeshes = document.getElementById('showCollisionMeshes');
     const showSpawnPoints = document.getElementById('showSpawnPoints');
+    const enableFrustumCulling = document.getElementById('enableFrustumCulling');
+    const enableShadows = document.getElementById('enableShadows');
 
     showCollisionMeshes.addEventListener('change', (event) => {
       this.toggleCollisionMeshes(event.target.checked);
@@ -401,6 +450,17 @@ class MultiplayerGame {
 
     showSpawnPoints.addEventListener('change', (event) => {
       this.toggleSpawnPoints(event.target.checked);
+    });
+
+    enableFrustumCulling.addEventListener('change', (event) => {
+      this.cullingEnabled = event.target.checked;
+      console.log(`🎯 Frustum culling ${this.cullingEnabled ? 'enabled' : 'disabled'}`);
+    });
+
+    enableShadows.addEventListener('change', (event) => {
+      this.renderer.shadowMap.enabled = event.target.checked;
+      this.directionalLight.castShadow = event.target.checked;
+      console.log(`💡 Shadows ${event.target.checked ? 'enabled' : 'disabled'}`);
     });
   }
 
@@ -723,16 +783,17 @@ class MultiplayerGame {
   addPlayer(playerData) {
     if (this.players[playerData.id]) return;
 
-    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 4, 8);
+    // Use shared geometry and create player-specific material
     const playerMaterial = new THREE.MeshLambertMaterial({ color: playerData.color });
-    const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+    const playerMesh = new THREE.Mesh(this.sharedGeometries.player, playerMaterial);
     
     playerMesh.position.set(playerData.position.x, playerData.position.y, playerData.position.z);
     playerMesh.castShadow = true;
     
     this.players[playerData.id] = {
       mesh: playerMesh,
-      data: playerData
+      data: playerData,
+      material: playerMaterial // Store reference for cleanup
     };
     
     this.scene.add(playerMesh);
@@ -800,17 +861,21 @@ class MultiplayerGame {
 
   // Memory management and cleanup
   dispose() {
-    // Clean up geometries and materials
-    this.scene.traverse((child) => {
-      if (child.geometry) {
-        child.geometry.dispose();
-      }
-      if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(material => material.dispose());
-        } else {
-          child.material.dispose();
-        }
+    // Clean up shared geometries
+    Object.values(this.sharedGeometries).forEach(geometry => {
+      if (geometry) geometry.dispose();
+    });
+    
+    // Clean up shared materials
+    Object.values(this.sharedMaterials).forEach(material => {
+      if (material) material.dispose();
+    });
+    
+    // Clean up player-specific materials
+    Object.values(this.players).forEach(player => {
+      if (player.mesh) {
+        this.scene.remove(player.mesh);
+        if (player.material) player.material.dispose();
       }
     });
     
@@ -822,17 +887,13 @@ class MultiplayerGame {
     // Clear arrays
     this.gameObjects.length = 0;
     this.defaultEnvironment.length = 0;
+    this.players = {};
     
-    // Clean up players
-    Object.values(this.players).forEach(player => {
-      if (player.mesh) {
-        this.scene.remove(player.mesh);
-        if (player.mesh.geometry) player.mesh.geometry.dispose();
-        if (player.mesh.material) player.mesh.material.dispose();
-      }
-    });
+    // Clear object pools
+    this.objectPool.players.length = 0;
+    this.objectPool.collectibles.length = 0;
     
-    console.log('🧹 Memory cleanup completed');
+    console.log('🧹 Memory cleanup completed with shared resources');
   }
 
   requestPointerLock() {
@@ -1027,9 +1088,14 @@ class MultiplayerGame {
     const clampedDeltaTime = Math.min(deltaTime, 0.033); // Max 30 FPS
     
     this.updateMovement(clampedDeltaTime);
-    this.checkCollectibles();
     
-    // Animate collectibles with optimized calculations
+    // Optimize collision and animation checks (only every 3rd frame)
+    if (this.frameCount % 3 === 0) {
+      this.checkCollectibles();
+      this.performFrustumCulling();
+    }
+    
+    // Animate collectibles with optimized calculations (only visible ones)
     const time = currentTime * 0.001; // Convert to seconds
     const frameMultiplier = deltaTime / 0.016; // Normalize to 60 FPS
     
@@ -1042,7 +1108,41 @@ class MultiplayerGame {
       }
     }
     
+    // Manual shadow map update (only when needed)
+    if (this.frameCount % 10 === 0) {
+      this.renderer.shadowMap.needsUpdate = true;
+    }
+    
     this.renderer.render(this.scene, this.camera);
+  }
+
+  performFrustumCulling() {
+    if (!this.cullingEnabled) return;
+    
+    const frustum = new THREE.Frustum();
+    const cameraMatrix = new THREE.Matrix4().multiplyMatrices(
+      this.camera.projectionMatrix,
+      this.camera.matrixWorldInverse
+    );
+    frustum.setFromProjectionMatrix(cameraMatrix);
+    
+    // Cull objects outside camera view
+    this.gameObjects.forEach(object => {
+      if (object.userData.type === 'collectible') {
+        const distance = this.camera.position.distanceTo(object.position);
+        const inFrustum = frustum.intersectsObject(object);
+        
+        // Hide objects that are too far or outside view
+        object.visible = inFrustum && distance < this.renderDistance;
+      }
+    });
+    
+    // Cull other players
+    Object.values(this.players).forEach(player => {
+      const distance = this.camera.position.distanceTo(player.mesh.position);
+      const inFrustum = frustum.intersectsObject(player.mesh);
+      player.mesh.visible = inFrustum && distance < this.renderDistance;
+    });
   }
 }
 
