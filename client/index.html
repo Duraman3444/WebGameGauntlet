@@ -316,13 +316,26 @@
       box-shadow: 0 6px 16px rgba(78, 205, 196, 0.5);
     }
 
+    .map-item.selected {
+      background: rgba(78, 205, 196, 0.3);
+      border-color: #4ecdc4;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(78, 205, 196, 0.5);
+    }
+
+    .map-item.selected:hover {
+      background: rgba(78, 205, 196, 0.4);
+      box-shadow: 0 6px 16px rgba(78, 205, 196, 0.6);
+    }
+
     .map-name {
       font-weight: bold;
       color: #fff;
       transition: color 0.3s ease;
     }
 
-    .map-item:hover .map-name {
+    .map-item:hover .map-name,
+    .map-item.selected .map-name {
       color: #4ecdc4;
       text-shadow: 0 0 5px rgba(78, 205, 196, 0.3);
     }
@@ -333,7 +346,8 @@
       transition: color 0.3s ease;
     }
 
-    .map-item:hover .map-size {
+    .map-item:hover .map-size,
+    .map-item.selected .map-size {
       color: #bbb;
     }
 
