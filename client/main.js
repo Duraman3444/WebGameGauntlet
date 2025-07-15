@@ -524,10 +524,20 @@ class MultiplayerGame {
       }
     });
 
-    // Escape key to release pointer lock
+    // Escape key to close menus or release pointer lock
     document.addEventListener('keydown', (event) => {
       if (event.code === 'Escape') {
-        document.exitPointerLock();
+        // Close any open menus first
+        if (this.isCharacterMenuOpen) {
+          this.toggleCharacterMenu();
+        } else if (this.isWeaponMenuOpen) {
+          this.toggleWeaponMenu();
+        } else if (this.isSettingsOpen) {
+          this.closeSettings();
+        } else {
+          // Only release pointer lock if no menus are open
+          document.exitPointerLock();
+        }
       }
     });
   }
@@ -1554,6 +1564,11 @@ class MultiplayerGame {
 
   updateMovement(deltaTime) {
     if (!this.isPointerLocked) return;
+    
+    // Prevent movement when any menu is open
+    if (this.isCharacterMenuOpen || this.isWeaponMenuOpen || this.isSettingsOpen) {
+      return;
+    }
 
     this.direction.set(0, 0, 0);
 
