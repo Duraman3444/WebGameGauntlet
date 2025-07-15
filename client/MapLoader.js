@@ -20,6 +20,19 @@ export class MapLoader {
         this.clearCurrentMap();
       }
 
+      // Handle default environment case
+      if (mapPath === 'default') {
+        console.log('🏞️ Using default environment (no map file to load)');
+        this.mapName = 'Default Environment';
+        
+        // Return a default spawn point
+        const spawnPoint = new THREE.Vector3(0, 1, 0);
+        console.log(`✅ Default environment ready`);
+        console.log(`📍 Spawn point: ${spawnPoint.x.toFixed(2)}, ${spawnPoint.y.toFixed(2)}, ${spawnPoint.z.toFixed(2)}`);
+        
+        return { mapGroup: null, spawnPoint };
+      }
+
       // Load the GLB/GLTF file
       const gltf = await this.loadGLTF(mapPath);
       
@@ -402,30 +415,88 @@ export class MapLoader {
 
   async loadAvailableMaps() {
     try {
-      console.log('🔍 Fetching available maps from server...');
-      const response = await fetch('http://localhost:3001/api/maps');
+      console.log('🔍 Loading available maps from local files...');
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      // Define the available maps based on the files in public/maps/
+      const availableMaps = [
+        {
+          name: 'Default Environment',
+          path: 'default',
+          description: 'Simple environment with platforms and collectibles',
+          isDefault: true
+        },
+        {
+          name: 'de_dust2',
+          path: '/maps/de_dust2_-_cs_map.glb',
+          description: 'Classic Counter-Strike map',
+          isDefault: false
+        },
+        {
+          name: 'Nuketown',
+          path: '/maps/nuketown.glb',
+          description: 'Classic Call of Duty map',
+          isDefault: false
+        },
+        {
+          name: 'Crash',
+          path: '/maps/crash__lowpoly_cod_map.glb',
+          description: 'Call of Duty 4 map',
+          isDefault: false
+        },
+        {
+          name: 'Clock Tower',
+          path: '/maps/clock_tower_3d_model_for_prisma_3d.glb',
+          description: 'Gothic clock tower environment',
+          isDefault: false
+        },
+        {
+          name: 'Countryside',
+          path: '/maps/countryside_scene_free.glb',
+          description: 'Rural countryside environment',
+          isDefault: false
+        },
+        {
+          name: 'Free Fire - Bermuda',
+          path: '/maps/free_fire_burmuda_map_the_circuit_3d_model.glb',
+          description: 'Free Fire battle royale map',
+          isDefault: false
+        },
+        {
+          name: 'Free Fire - Lone Wolf',
+          path: '/maps/free_fire_lone_wolf_mode_3d_model.glb',
+          description: 'Free Fire lone wolf mode map',
+          isDefault: false
+        },
+        {
+          name: 'Free Fire - Peak',
+          path: '/maps/free_fire_new_peak_3d_model.glb',
+          description: 'Free Fire new peak map',
+          isDefault: false
+        },
+        {
+          name: 'Test Map',
+          path: '/maps/test.glb',
+          description: 'Test environment',
+          isDefault: false
+        }
+      ];
       
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch maps');
-      }
-      
-      const availableMaps = data.maps || [];
-      
-      console.log(`📂 Found ${availableMaps.length} available maps:`, availableMaps);
+      console.log(`📂 Found ${availableMaps.length} available maps:`, availableMaps.map(m => m.name));
       return availableMaps;
       
     } catch (error) {
-      console.error('❌ Failed to fetch maps from server:', error);
+      console.error('❌ Failed to load maps:', error);
       
-      // Fallback to empty array if server endpoint fails
-      console.log('🔄 Using empty map list as fallback');
-      return [];
+      // Fallback to just default environment
+      console.log('🔄 Using default environment as fallback');
+      return [
+        {
+          name: 'Default Environment',
+          path: 'default',
+          description: 'Simple environment with platforms and collectibles',
+          isDefault: true
+        }
+      ];
     }
   }
 

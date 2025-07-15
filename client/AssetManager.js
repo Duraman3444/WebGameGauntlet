@@ -14,25 +14,25 @@ export class AssetManager {
         soldier: {
           model: '/assets/characters/soldier.glb',
           name: 'Soldier',
-          color: 0x2e7d32,
+          color: 0x2e7d32,  // Green
           stats: { health: 100, speed: 1.0, damage: 20 }
         },
         sniper: {
           model: '/assets/characters/sniper.glb',
           name: 'Sniper',
-          color: 0x1565c0,
+          color: 0x1565c0,  // Blue
           stats: { health: 80, speed: 0.8, damage: 50 }
         },
         assault: {
           model: '/assets/characters/assault.glb',
           name: 'Assault',
-          color: 0xd32f2f,
+          color: 0x8e24aa,  // Purple
           stats: { health: 120, speed: 1.2, damage: 25 }
         },
         medic: {
           model: '/assets/characters/medic.glb',
           name: 'Medic',
-          color: 0xf57c00,
+          color: 0xe53935,  // Red
           stats: { health: 90, speed: 1.1, damage: 15 }
         }
       },

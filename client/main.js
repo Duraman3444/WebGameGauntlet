@@ -242,42 +242,57 @@ class MultiplayerGame {
   }
 
   async setupPlayer() {
+    // Use placeholder character directly - no 3D model loading
+    console.log('🎮 Creating placeholder player character with 3D weapon');
+    
+    // Get character color based on current selection
+    const characterColors = {
+      soldier: 0x2e7d32,  // Green
+      sniper: 0x1565c0,   // Blue
+      assault: 0x8e24aa,  // Purple
+      medic: 0xe53935     // Red
+    };
+    
+    const playerColor = characterColors[this.currentCharacter] || 0x4a90e2;
+    const playerMaterial = new THREE.MeshLambertMaterial({ color: playerColor });
+    
+    // Create player using shared geometry
+    this.player = new THREE.Mesh(this.sharedGeometries.player, playerMaterial);
+    this.player.position.set(0, 1, 0);
+    this.player.castShadow = true;
+    this.player.receiveShadow = true;
+    this.scene.add(this.player);
+    
+    // Load weapon model and attach to player
     try {
-      // Load character model
-      this.player = await this.assetManager.loadCharacter(this.currentCharacter);
-      this.player.position.set(0, 1, 0);
-      this.player.castShadow = true;
-      this.player.receiveShadow = true;
-      this.scene.add(this.player);
-
-      // Load weapon model and attach to player
       this.playerWeapon = await this.assetManager.loadWeapon(this.currentWeapon);
       this.playerWeapon.position.set(0.5, 0.3, 0.5);
       this.playerWeapon.rotation.y = Math.PI / 4;
       this.playerWeapon.castShadow = true;
       this.player.add(this.playerWeapon);
-
-      // Set up third-person camera
-      this.camera.position.set(0, 5, 10);
-      this.cameraTarget.copy(this.player.position);
-      this.cameraTarget.y += 2;
-      this.camera.lookAt(this.cameraTarget);
-      
-      // Initialize camera angles based on current position
-      const direction = new THREE.Vector3().subVectors(this.camera.position, this.player.position).normalize();
-      this.cameraAngle.horizontal = Math.atan2(direction.x, direction.z);
-      this.cameraAngle.vertical = Math.asin(direction.y);
-      
-      console.log(`✅ Player setup complete with ${this.currentCharacter} and ${this.currentWeapon}`);
     } catch (error) {
-      console.error('Error setting up player:', error);
-      // Fallback to basic player setup
-      this.player = new THREE.Mesh(this.sharedGeometries.player, this.sharedMaterials.player);
-      this.player.position.set(0, 1, 0);
-      this.player.castShadow = true;
-      this.player.receiveShadow = true;
-      this.scene.add(this.player);
+      console.error('Error loading weapon:', error);
+      // Fallback to placeholder weapon
+      const weaponMaterial = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
+      this.playerWeapon = new THREE.Mesh(this.sharedGeometries.weapon, weaponMaterial);
+      this.playerWeapon.position.set(0.5, 0.3, 0.5);
+      this.playerWeapon.rotation.y = Math.PI / 4;
+      this.playerWeapon.castShadow = true;
+      this.player.add(this.playerWeapon);
     }
+
+    // Set up third-person camera
+    this.camera.position.set(0, 5, 10);
+    this.cameraTarget.copy(this.player.position);
+    this.cameraTarget.y += 2;
+    this.camera.lookAt(this.cameraTarget);
+    
+    // Initialize camera angles based on current position
+    const direction = new THREE.Vector3().subVectors(this.camera.position, this.player.position).normalize();
+    this.cameraAngle.horizontal = Math.atan2(direction.x, direction.z);
+    this.cameraAngle.vertical = Math.asin(direction.y);
+    
+    console.log(`✅ Player setup complete with placeholder ${this.currentCharacter} and 3D weapon ${this.currentWeapon}`);
   }
 
   setupEnvironment() {
@@ -1720,82 +1735,94 @@ class MultiplayerGame {
   }
 
   async selectCharacter(characterId) {
-    try {
-      console.log(`🎮 Selecting character: ${characterId}`);
-      
-      // Remove current player from scene
-      if (this.player) {
-        this.scene.remove(this.player);
-      }
-      
-      // Update current character
-      this.currentCharacter = characterId;
-      
-      // Load new character
-      this.player = await this.assetManager.loadCharacter(characterId);
-      this.player.position.set(0, 1, 0);
-      this.player.castShadow = true;
-      this.player.receiveShadow = true;
-      this.scene.add(this.player);
-      
-      // Update weapon attachment
-      if (this.playerWeapon) {
-        this.player.add(this.playerWeapon);
-        this.playerWeapon.position.set(0.5, 0.3, 0.5);
-        this.playerWeapon.rotation.y = Math.PI / 4;
-      }
-      
-      // Update UI
-      this.updateCharacterUI();
-      
-      // Close menu
-      this.toggleCharacterMenu();
-      
-      console.log(`✅ Character changed to ${characterId}`);
-    } catch (error) {
-      console.error('Error selecting character:', error);
+    console.log(`🎮 Selecting character: ${characterId}`);
+    
+    // Remove current player from scene
+    if (this.player) {
+      this.scene.remove(this.player);
     }
+    
+    // Update current character
+    this.currentCharacter = characterId;
+    
+    // Create new placeholder character
+    const characterColors = {
+      soldier: 0x2e7d32,  // Green
+      sniper: 0x1565c0,   // Blue
+      assault: 0x8e24aa,  // Purple
+      medic: 0xe53935     // Red
+    };
+    
+    const playerColor = characterColors[characterId] || 0x4a90e2;
+    const playerMaterial = new THREE.MeshLambertMaterial({ color: playerColor });
+    
+    this.player = new THREE.Mesh(this.sharedGeometries.player, playerMaterial);
+    this.player.position.set(0, 1, 0);
+    this.player.castShadow = true;
+    this.player.receiveShadow = true;
+    this.scene.add(this.player);
+    
+    // Update weapon attachment
+    if (this.playerWeapon) {
+      this.player.add(this.playerWeapon);
+      this.playerWeapon.position.set(0.5, 0.3, 0.5);
+      this.playerWeapon.rotation.y = Math.PI / 4;
+    }
+    
+    // Update UI
+    this.updateCharacterUI();
+    
+    // Close menu
+    this.toggleCharacterMenu();
+    
+    console.log(`✅ Character changed to placeholder ${characterId} with 3D weapon`);
   }
 
   async selectWeapon(weaponId) {
+    console.log(`🔫 Selecting weapon: ${weaponId}`);
+    
+    // Remove current weapon from player
+    if (this.playerWeapon) {
+      this.player.remove(this.playerWeapon);
+    }
+    
+    // Update current weapon
+    this.currentWeapon = weaponId;
+    
+    // Load new 3D weapon model
     try {
-      console.log(`🔫 Selecting weapon: ${weaponId}`);
-      
-      // Remove current weapon from player
-      if (this.playerWeapon) {
-        this.player.remove(this.playerWeapon);
-      }
-      
-      // Update current weapon
-      this.currentWeapon = weaponId;
-      
-      // Load new weapon
       this.playerWeapon = await this.assetManager.loadWeapon(weaponId);
       this.playerWeapon.position.set(0.5, 0.3, 0.5);
       this.playerWeapon.rotation.y = Math.PI / 4;
       this.playerWeapon.castShadow = true;
-      
-      // Attach to player
-      if (this.player) {
-        this.player.add(this.playerWeapon);
-      }
-      
-      // Update weapon stats
-      const weaponStats = this.assetManager.assets.weapons[weaponId].stats;
-      this.weapon.maxAmmo = weaponStats.ammo;
-      this.weapon.damage = weaponStats.damage;
-      this.weapon.fireRate = weaponStats.fireRate;
-      
-      // Update UI
-      this.updateWeaponUI();
-      
-      // Close menu
-      this.toggleWeaponMenu();
-      
-      console.log(`✅ Weapon changed to ${weaponId}`);
     } catch (error) {
-      console.error('Error selecting weapon:', error);
+      console.error('Error loading weapon:', error);
+      // Fallback to placeholder weapon
+      const weaponMaterial = new THREE.MeshLambertMaterial({ color: 0x2c3e50 });
+      this.playerWeapon = new THREE.Mesh(this.sharedGeometries.weapon, weaponMaterial);
+      this.playerWeapon.position.set(0.5, 0.3, 0.5);
+      this.playerWeapon.rotation.y = Math.PI / 4;
+      this.playerWeapon.castShadow = true;
     }
+    
+    // Attach to player
+    if (this.player) {
+      this.player.add(this.playerWeapon);
+    }
+    
+    // Update weapon stats
+    const weaponStats = this.assetManager.assets.weapons[weaponId].stats;
+    this.weapon.maxAmmo = weaponStats.ammo;
+    this.weapon.damage = weaponStats.damage;
+    this.weapon.fireRate = weaponStats.fireRate;
+    
+    // Update UI
+    this.updateWeaponUI();
+    
+    // Close menu
+    this.toggleWeaponMenu();
+    
+    console.log(`✅ Weapon changed to 3D model ${weaponId}`);
   }
 
   updateCharacterUI() {
