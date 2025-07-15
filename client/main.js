@@ -1010,8 +1010,8 @@ class MultiplayerGame {
     try {
       this.availableMaps = await this.mapLoader.loadAvailableMaps();
       
-      // Filter out any maps that don't actually exist
-      const validMaps = this.availableMaps.filter(map => map.size > 0);
+      // Filter out only the default environment from the main list (it's added separately)
+      const validMaps = this.availableMaps.filter(map => !map.isDefault);
       
       if (validMaps.length === 0) {
         mapListElement.innerHTML = `
@@ -1040,7 +1040,7 @@ class MultiplayerGame {
         <div class="map-item ${this.mapLoader.mapName === map.name ? 'active' : ''}" data-map="${map.name}" data-path="${map.path}">
           <div>
             <div class="map-name">🗺️ ${map.name}</div>
-            <div class="map-size">${this.formatFileSize(map.size)}</div>
+            <div class="map-size">${map.description || 'Available'}</div>
           </div>
         </div>
       `).join('');
@@ -1051,12 +1051,14 @@ class MultiplayerGame {
       const mapItems = mapListElement.querySelectorAll('.map-item');
       mapItems.forEach(item => {
         item.addEventListener('click', () => {
-          this.switchMap(item.dataset.map, item.dataset.path);
+          const mapName = item.dataset.map;
+          const mapPath = item.dataset.path || mapName;
+          this.switchMap(mapName, mapPath);
         });
       });
 
       // Update available maps count
-      console.log(`📂 Loaded ${validMaps.length} valid maps in UI`);
+      console.log(`📂 Loaded ${this.availableMaps.length} total maps in UI (${validMaps.length} custom maps + default)`);
 
     } catch (error) {
       console.error('Failed to load maps:', error);
