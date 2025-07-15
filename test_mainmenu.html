@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Menu Test</title>
+</head>
+<body>
+    <h1>Main Menu Test Status</h1>
+    <div id="status">Testing...</div>
+    
+    <script>
+        // Test if the main menu is accessible
+        setTimeout(() => {
+            const statusDiv = document.getElementById('status');
+            
+            try {
+                // Try to access the main URL
+                fetch('http://localhost:3002/')
+                    .then(response => response.text())
+                    .then(html => {
+                        if (html.includes('Loading Web Game Gauntlet')) {
+                            statusDiv.innerHTML = `
+                                <div style="color: green;">✅ Client is running on port 3002</div>
+                                <div style="color: green;">✅ HTML is being served correctly</div>
+                                <div style="color: blue;">📋 Go to <a href="http://localhost:3002/" target="_blank">http://localhost:3002/</a> to access the game</div>
+                            `;
+                        } else {
+                            statusDiv.innerHTML = '<div style="color: red;">❌ HTML content unexpected</div>';
+                        }
+                    })
+                    .catch(error => {
+                        statusDiv.innerHTML = '<div style="color: red;">❌ Cannot connect to client server</div>';
+                    });
+                
+                // Test server connection
+                fetch('http://localhost:3001/api/health')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'healthy') {
+                            statusDiv.innerHTML += '<div style="color: green;">✅ Server is running on port 3001</div>';
+                        }
+                    })
+                    .catch(error => {
+                        statusDiv.innerHTML += '<div style="color: orange;">⚠️ Server connection optional for single player</div>';
+                    });
+                    
+            } catch (error) {
+                statusDiv.innerHTML = '<div style="color: red;">❌ Error: ' + error.message + '</div>';
+            }
+        }, 1000);
+    </script>
+</body>
+</html> 
