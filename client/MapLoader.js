@@ -155,15 +155,22 @@ export class MapLoader {
         collisionMesh.visible = false; // Hide collision mesh
         collisionMesh.userData = {
           isCollision: true,
-          originalMesh: child
+          originalMesh: child,
+          isMapCollision: true
         };
+        
+        // Ensure geometry is properly set up for raycasting
+        if (collisionMesh.geometry) {
+          collisionMesh.geometry.computeBoundingSphere();
+          collisionMesh.geometry.computeBoundingBox();
+        }
         
         this.mapCollisionMeshes.push(collisionMesh);
         this.scene.add(collisionMesh);
       }
     });
     
-    console.log(`🔗 Generated ${this.mapCollisionMeshes.length} collision meshes`);
+    console.log(`🔗 Generated ${this.mapCollisionMeshes.length} collision meshes for ${this.mapName}`);
   }
 
   scaleMapModel(model, mapName) {
@@ -184,7 +191,10 @@ export class MapLoader {
     const scaleFactor = scaleFactors[mapName] || scaleFactors.default;
     model.scale.setScalar(scaleFactor);
     
-    console.log(`📏 Scaled map by factor: ${scaleFactor}`);
+    console.log(`📏 Scaled map by factor: ${scaleFactor} for ${mapName}`);
+    
+    // Store scale factor for collision detection
+    this.mapScaleFactor = scaleFactor;
   }
 
   positionMapModel(model, mapName) {
@@ -292,7 +302,7 @@ export class MapLoader {
   }
 
   checkCollisionWithMap(position, radius = 0.5) {
-    if (!this.currentMap) return [];
+    if (!this.currentMap || this.mapCollisionMeshes.length === 0) return [];
     
     const collisions = [];
     const raycaster = new THREE.Raycaster();
@@ -308,15 +318,15 @@ export class MapLoader {
     
     for (const direction of directions) {
       raycaster.set(position, direction);
-      const intersections = raycaster.intersectObjects(this.scene.children, true);
+      const intersections = raycaster.intersectObjects(this.mapCollisionMeshes, false);
       
       for (const intersection of intersections) {
-        if (intersection.distance < radius && intersection.object.parent === this.currentMap) {
+        if (intersection.distance < radius) {
           collisions.push({
             object: intersection.object,
             point: intersection.point,
             distance: intersection.distance,
-            normal: intersection.face.normal,
+            normal: intersection.face ? intersection.face.normal : new THREE.Vector3(0, 1, 0),
             direction: direction
           });
         }
@@ -327,19 +337,32 @@ export class MapLoader {
   }
 
   getGroundHeight(position) {
-    if (!this.currentMap) return 0;
+    if (!this.currentMap || this.mapCollisionMeshes.length === 0) return 0;
     
     const raycaster = new THREE.Raycaster();
     raycaster.set(position, new THREE.Vector3(0, -1, 0));
     
-    const intersections = raycaster.intersectObjects(this.scene.children, true);
+    // First try to raycast against collision meshes
+    const intersections = raycaster.intersectObjects(this.mapCollisionMeshes, false);
     
-    for (const intersection of intersections) {
-      if (intersection.object.parent === this.currentMap) {
+    if (intersections.length > 0) {
+      // Sort by distance and return the closest ground
+      intersections.sort((a, b) => a.distance - b.distance);
+      console.log(`🎯 Ground height found at: ${intersections[0].point.y.toFixed(2)} for position (${position.x.toFixed(2)}, ${position.z.toFixed(2)})`);
+      return intersections[0].point.y;
+    }
+    
+    // Fallback: try with all scene children
+    const allIntersections = raycaster.intersectObjects(this.scene.children, true);
+    
+    for (const intersection of allIntersections) {
+      if (intersection.object.userData && intersection.object.userData.isMapCollision) {
+        console.log(`🎯 Fallback ground height found at: ${intersection.point.y.toFixed(2)}`);
         return intersection.point.y;
       }
     }
     
+    console.log(`⚠️ No ground detected at position (${position.x.toFixed(2)}, ${position.z.toFixed(2)}), returning 0`);
     return 0;
   }
 
@@ -414,7 +437,56 @@ export class MapLoader {
       hasMap: !!this.currentMap,
       collisionMeshes: this.mapCollisionMeshes.length,
       spawnPoints: this.getMapSpawnPoints().length,
-      size: this.getMapSize()
+      size: this.getMapSize(),
+      scaleFactor: this.mapScaleFactor || 1
     };
+  }
+
+  // Debug method to check collision detection
+  debugGroundDetection(position) {
+    if (!this.currentMap) return null;
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.set(position, new THREE.Vector3(0, -1, 0));
+    raycaster.far = 1000; // Increase raycast distance
+    
+    const intersections = raycaster.intersectObjects(this.mapCollisionMeshes, false);
+    
+    console.log(`🔍 Debug ground detection at (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)})`);
+    console.log(`🔍 Found ${intersections.length} intersections`);
+    
+    if (intersections.length > 0) {
+      intersections.forEach((intersection, index) => {
+        console.log(`🔍 Intersection ${index}: distance=${intersection.distance.toFixed(2)}, point=(${intersection.point.x.toFixed(2)}, ${intersection.point.y.toFixed(2)}, ${intersection.point.z.toFixed(2)})`);
+      });
+    }
+    
+    return intersections;
+  }
+
+  // Get a safe spawn position to prevent falling through map
+  getSafeSpawnPosition() {
+    if (!this.currentMap) return new THREE.Vector3(0, 2, 0);
+    
+    const box = new THREE.Box3().setFromObject(this.currentMap);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    
+    // Start well above the map
+    let testPosition = new THREE.Vector3(center.x, box.max.y + 10, center.z);
+    
+    // Cast ray downward to find first solid ground
+    const groundHeight = this.getGroundHeight(testPosition);
+    
+    if (groundHeight > -1000) {
+      testPosition.y = groundHeight + 2; // Place player 2 units above ground
+      console.log(`🛡️ Safe spawn position found at (${testPosition.x.toFixed(2)}, ${testPosition.y.toFixed(2)}, ${testPosition.z.toFixed(2)})`);
+      return testPosition;
+    }
+    
+    // Fallback to center of map bounding box
+    testPosition.y = center.y + size.y * 0.5;
+    console.log(`🛡️ Using fallback spawn position at (${testPosition.x.toFixed(2)}, ${testPosition.y.toFixed(2)}, ${testPosition.z.toFixed(2)})`);
+    return testPosition;
   }
 } 

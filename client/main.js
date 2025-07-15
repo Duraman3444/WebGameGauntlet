@@ -257,6 +257,13 @@ class MultiplayerGame {
           console.log(`🎮 Player spawned at: ${this.player.position.x.toFixed(2)}, ${this.player.position.y.toFixed(2)}, ${this.player.position.z.toFixed(2)}`);
         }
         
+        // For de_dust2 and other maps, use safe spawn position
+        if (firstMap.name.includes('dust2') || firstMap.name.includes('de_dust2')) {
+          const safeSpawn = this.mapLoader.getSafeSpawnPosition();
+          this.player.position.copy(safeSpawn);
+          console.log(`🛡️ Using safe spawn for ${firstMap.name} at: ${this.player.position.x.toFixed(2)}, ${this.player.position.y.toFixed(2)}, ${this.player.position.z.toFixed(2)}`);
+        }
+        
         // Update lighting for the map environment
         this.updateLightingForMap();
         
@@ -993,18 +1000,31 @@ class MultiplayerGame {
         }
       }
       
-      // Ground detection for jumping
+      // Ground detection for jumping - improved for de_dust2 and other maps
       const groundHeight = this.mapLoader.getGroundHeight(this.player.position);
       const playerGroundLevel = groundHeight + 1.8; // Player height
       
-      if (this.player.position.y <= playerGroundLevel + 0.1) {
-        this.player.position.y = playerGroundLevel;
-        this.velocity.y = 0;
-        this.canJump = true;
+      // Add some tolerance for ground detection
+      if (groundHeight > -1000) { // Valid ground height detected
+        if (this.player.position.y <= playerGroundLevel + 0.2) {
+          this.player.position.y = playerGroundLevel;
+          this.velocity.y = 0;
+          this.canJump = true;
+        } else {
+          // Apply gravity
+          this.velocity.y -= this.gravity * deltaTime;
+          this.canJump = false;
+        }
       } else {
-        // Apply gravity
-        this.velocity.y -= this.gravity * deltaTime;
-        this.canJump = false;
+        // No ground detected - emergency fallback
+        console.log(`⚠️ No ground detected, falling back to emergency ground level`);
+        if (this.player.position.y <= 1) {
+          this.player.position.y = 1;
+          this.velocity.y = 0;
+          this.canJump = true;
+        } else {
+          this.velocity.y -= this.gravity * deltaTime;
+        }
       }
     } else {
       // Default environment - simple ground collision
@@ -1025,6 +1045,14 @@ class MultiplayerGame {
 
     // Apply movement
     this.player.position.addScaledVector(this.velocity, deltaTime);
+
+    // Check if player is falling through the map (emergency check)
+    if (this.mapLoader && this.mapLoader.currentMap && this.player.position.y < -50) {
+      console.log('🚨 Player fell through map! Resetting to safe position...');
+      const safeSpawn = this.mapLoader.getSafeSpawnPosition();
+      this.player.position.copy(safeSpawn);
+      this.velocity.set(0, 0, 0);
+    }
 
     // Send position to server (throttled)
     if (this.socket && this.frameCount % 3 === 0) {
@@ -1236,6 +1264,40 @@ document.addEventListener('DOMContentLoaded', () => {
           game.player.position.set(0, 1, 0);
         }
       }
+    },
+    
+    // Debug collision detection
+    debugGround: () => {
+      if (game.mapLoader) {
+        return game.mapLoader.debugGroundDetection(game.player.position);
+      }
+      return null;
+    },
+    
+    // Get ground height at current position
+    getGroundHeight: () => {
+      if (game.mapLoader) {
+        const height = game.mapLoader.getGroundHeight(game.player.position);
+        console.log(`Ground height at player position: ${height.toFixed(2)}`);
+        return height;
+      }
+      return 0;
+    },
+    
+    // Teleport to safe position
+    teleportToSafePosition: () => {
+      if (game.mapLoader) {
+        const safeSpawn = game.mapLoader.getSafeSpawnPosition();
+        game.player.position.copy(safeSpawn);
+        console.log(`🛡️ Teleported to safe position: ${safeSpawn.x.toFixed(2)}, ${safeSpawn.y.toFixed(2)}, ${safeSpawn.z.toFixed(2)}`);
+      }
+    },
+    
+    // Get current player position
+    getPlayerPosition: () => {
+      const pos = game.player.position;
+      console.log(`Player position: ${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)}`);
+      return pos;
     }
   };
   
@@ -1249,9 +1311,17 @@ gameDebug.getCurrentMapInfo()     - Get current map information
 gameDebug.clearMap()              - Clear current map
 gameDebug.loadMapFromUrl(url, name) - Load map from external URL
 
+🔍 Collision Debug Commands:
+gameDebug.debugGround()           - Debug ground detection at current position
+gameDebug.getGroundHeight()       - Get ground height at current position
+gameDebug.teleportToSafePosition() - Teleport to safe spawn position
+gameDebug.getPlayerPosition()     - Get current player position
+
 Example usage:
 gameDebug.loadMap('/maps/dust2.glb', 'dust2')
 gameDebug.getAvailableMaps()
 gameDebug.getCurrentMapInfo()
+gameDebug.debugGround()
+gameDebug.teleportToSafePosition()
   `);
 }); 
