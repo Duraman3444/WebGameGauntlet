@@ -198,6 +198,14 @@ export class MapLoader {
       'mirage': 0.1,
       'inferno': 0.1,
       'cache': 0.1,
+      'crash': 0.05,  // Reduced scale for crash map
+      'crash__lowpoly_cod_map': 0.05,
+      'clock_tower': 0.08,
+      'clock_tower_3d_model_for_prisma_3d': 0.08,
+      'countryside': 0.15,
+      'countryside_scene_free': 0.15,
+      'free_fire': 0.12,
+      'test': 0.1,
       'default': 0.1
     };
     

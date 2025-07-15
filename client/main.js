@@ -115,6 +115,10 @@ class MultiplayerGame {
     this.weaponMenuSelectedIndex = 0;
     this.menuKeyboardHandler = null;
     
+    // Character scaling based on map size
+    this.basePlayerScale = 1.0;
+    this.currentPlayerScale = 1.0;
+    
     // Initialize the game
     this.init();
   }
@@ -268,6 +272,9 @@ class MultiplayerGame {
     this.player.receiveShadow = true;
     this.scene.add(this.player);
     
+    // Apply initial character scale (will be updated when map loads)
+    this.updateCharacterScale();
+    
     // Load weapon model and attach to player
     try {
       this.playerWeapon = await this.assetManager.loadWeapon(this.currentWeapon);
@@ -347,6 +354,9 @@ class MultiplayerGame {
         
         // Update lighting for the map environment
         this.updateLightingForMap();
+        
+        // Update character scale for the map
+        this.updateCharacterScale();
         
         console.log(`🎮 Loaded initial map: ${firstMap.name}`);
         
@@ -1135,6 +1145,8 @@ class MultiplayerGame {
         this.showDefaultEnvironment();
         // Reset player position to default
         this.player.position.set(0, 1, 0);
+        // Reset character scale to default
+        this.updateCharacterScale();
         this.updateMapInfo();
         console.log('🏞️ Switched to default environment');
       } else {
@@ -1151,6 +1163,9 @@ class MultiplayerGame {
         
         // Update lighting for the map environment
         this.updateLightingForMap();
+        
+        // Update character scale for the map
+        this.updateCharacterScale();
         
         this.updateMapInfo();
         console.log(`🗺️ Switched to map: ${mapName}`);
@@ -1492,6 +1507,35 @@ class MultiplayerGame {
     }
     
     console.log('💡 Lighting updated for map environment');
+  }
+
+  // Calculate appropriate character scale based on map scale factor
+  calculateCharacterScale() {
+    // Get the current map scale factor
+    const mapScaleFactor = this.mapLoader?.mapScaleFactor || 1.0;
+    
+    // For default environment, use normal scale
+    if (!this.mapLoader?.currentMap) {
+      return 1.0;
+    }
+    
+    // Character scale should be proportional to map scale
+    // Small maps need smaller characters to fit properly
+    const characterScale = mapScaleFactor * 8; // Base multiplier for good proportion
+    
+    // Ensure reasonable bounds
+    return Math.max(Math.min(characterScale, 1.5), 0.3);
+  }
+
+  // Update character scale based on current map
+  updateCharacterScale() {
+    if (!this.player) return;
+    
+    const newScale = this.calculateCharacterScale();
+    this.currentPlayerScale = newScale;
+    this.player.scale.setScalar(newScale);
+    
+    console.log(`🎮 Updated character scale to ${newScale.toFixed(2)} for map: ${this.mapLoader?.mapName || 'Default'}`);
   }
 
   updateMovement(deltaTime) {
@@ -1867,6 +1911,9 @@ class MultiplayerGame {
       this.playerWeapon.rotation.y = Math.PI / 4;
     }
     
+    // Apply current map scale to the new character
+    this.updateCharacterScale();
+    
     // Update UI
     this.updateCharacterUI();
     
@@ -2046,6 +2093,9 @@ document.addEventListener('DOMContentLoaded', () => {
           // Update lighting for the map environment
           game.updateLightingForMap();
           
+          // Update character scale for the map
+          game.updateCharacterScale();
+          
           game.updateMapInfo();
           console.log(`✅ Map loaded: ${mapName}`);
         } catch (error) {
@@ -2078,6 +2128,8 @@ document.addEventListener('DOMContentLoaded', () => {
         game.mapLoader.clearCurrentMap();
         game.showDefaultEnvironment();
         game.player.position.set(0, 1, 0);
+        // Reset character scale to default
+        game.updateCharacterScale();
         game.updateMapInfo();
         console.log('🗑️ Map cleared');
       }
@@ -2099,6 +2151,9 @@ document.addEventListener('DOMContentLoaded', () => {
           
           // Update lighting for the map environment
           game.updateLightingForMap();
+          
+          // Update character scale for the map
+          game.updateCharacterScale();
           
           game.updateMapInfo();
           console.log(`✅ Map loaded from URL: ${name}`);
