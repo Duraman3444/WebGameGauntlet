@@ -1,19 +1,24 @@
-# Sketchfab Integration Guide
+# Three.js Multiplayer Game - GLB/GLTF Integration Guide
 
 ## Overview
-This guide explains how to use Sketchfab models to load iconic multiplayer maps from classic games and convert them into stealth environments.
+This guide explains how to use GLB/GLTF 3D models from Sketchfab and other sources to load custom maps into your Three.js multiplayer game.
 
-## Supported Maps
-The system has built-in profiles for these classic maps:
+## Supported Map Types
+The system has built-in scaling profiles for these classic maps:
 
 ### Call of Duty Maps
-- **Shipment** (`cod_shipment`) - Tight quarters container yard
-- **Rust** (`cod_rust`) - Industrial facility with multi-level gameplay
-- **Nuketown** (`cod_nuketown`) - Nuclear test suburban environment
+- **Shipment** (`shipment.glb`) - Tight quarters container yard
+- **Rust** (`rust.glb`) - Industrial facility with multi-level gameplay
+- **Nuketown** (`nuketown.glb`) - Nuclear test suburban environment
 
 ### Counter-Strike Maps
-- **Dust 2** (`cs_dust2`) - Classic Middle Eastern town
-- **Mirage** (`cs_mirage`) - Moroccan-inspired architecture
+- **Dust 2** (`dust2.glb`) - Classic Middle Eastern town
+- **Mirage** (`mirage.glb`) - Moroccan-inspired architecture
+
+### Generic Maps
+- **Map** (`map.glb`) - Generic map with default scaling
+- **Level** (`level.glb`) - Level-specific map
+- **Scene** (`scene.glb`) - Scene-based map
 
 ## How to Use
 
@@ -21,49 +26,52 @@ The system has built-in profiles for these classic maps:
 1. Go to [Sketchfab.com](https://sketchfab.com)
 2. Search for your desired map (e.g., "Call of Duty Shipment" or "CS Dust2")
 3. Look for models with good geometry and reasonable polygon counts
-4. Copy the Sketchfab URL
+4. Download the model as GLB format
 
-### Step 2: Load the Map
-Open the browser console (F12) and use the debug commands:
+### Step 2: Add to Game
+1. Place the GLB file in the `public/maps/` directory
+2. Name it according to the map type (e.g., `dust2.glb`, `shipment.glb`)
+3. Restart the development server
+4. The map will be automatically loaded
+
+### Step 3: Test with Console Commands
+Open the browser console (F12) and use these commands:
 
 ```javascript
-// Get available map profiles
-debugGame.getAvailableMaps();
+// Get available maps
+await gameDebug.getAvailableMaps()
 
-// Load a map from Sketchfab
-debugGame.loadMap('https://sketchfab.com/3d-models/...', 'cod_shipment');
+// Load a specific map
+await gameDebug.loadMap('/maps/dust2.glb', 'dust2')
 
-// Check current map
-debugGame.getCurrentMap();
+// Get current map info
+gameDebug.getCurrentMapInfo()
 
 // Clear current map
-debugGame.clearMap();
-```
+gameDebug.clearMap()
 
-### Step 3: Test Local Files
-If you have downloaded 3D models locally:
-
-```javascript
-// Load local file (must be in public folder)
-debugGame.loadLocalMap('/models/shipment.gltf', 'cod_shipment');
+// Load map from external URL
+await gameDebug.loadMapFromUrl('https://example.com/map.glb', 'external-map')
 ```
 
 ## Conversion Process
 When you load a map, the system automatically:
 
-1. **Analyzes Geometry** - Identifies cover spots, patrol routes, and objective locations
-2. **Applies Stealth Lighting** - Reduces ambient light and adds strategic shadows
-3. **Adds Security Elements** - Places cameras, laser grids, and alarm systems
-4. **Creates Patrol Routes** - Generates enemy movement patterns
-5. **Places Objectives** - Distributes mission objectives throughout the map
+1. **Analyzes Geometry** - Processes all mesh objects for rendering
+2. **Applies Optimizations** - Optimizes materials and textures for web performance
+3. **Generates Collision Meshes** - Creates invisible collision geometry for physics
+4. **Sets up Lighting** - Configures shadows and lighting for the 3D environment
+5. **Creates Spawn Points** - Generates player spawn locations around the map
+6. **Scales and Centers** - Adjusts model size and position for optimal gameplay
 
-## Map Profiles
-Each map has a stealth profile that controls:
+## Map Processing Features
+Each map is processed with these features:
 
-- **Difficulty**: Easy, Medium, Hard
-- **Cover Density**: How much cover is available
-- **Patrol Complexity**: How sophisticated enemy AI routes are
-- **Objective Count**: Number of mission objectives
+- **Automatic Scaling**: Models are scaled based on filename and type
+- **Collision Detection**: All geometry becomes collidable for physics
+- **Shadow Casting**: Proper shadow casting and receiving setup
+- **Performance Optimization**: Materials and textures optimized for 60fps gameplay
+- **Multiplayer Support**: Spawn points and boundaries for multiplayer gameplay
 
 ## Supported Formats
 - **GLTF/GLB** (Preferred) - Best compatibility
@@ -129,13 +137,15 @@ You can create custom map profiles by modifying the MapLoader:
 
 ## Example Workflow
 1. Find a Shipment recreation on Sketchfab
-2. Copy the URL
-3. Load with `debugGame.loadMap(url, 'cod_shipment')`
-4. The system converts it to a stealth environment with:
-   - Patrolling guards around containers
-   - Security cameras on elevated positions
-   - Laser grids between containers
-   - Objectives hidden in strategic locations
-   - Atmospheric lighting for stealth gameplay
+2. Download as GLB format
+3. Rename to `shipment.glb`
+4. Place in `public/maps/` directory
+5. Restart server - the map loads automatically
+6. The system converts it to a multiplayer environment with:
+   - Optimized performance for web browsers
+   - Collision detection for player movement
+   - Proper lighting and shadows
+   - Spawn points for multiplayer matches
+   - Physics integration for realistic gameplay
 
-This transforms the classic fast-paced multiplayer map into a tense stealth experience! 
+This transforms any 3D model into a playable multiplayer map! 

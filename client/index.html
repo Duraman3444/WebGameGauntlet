@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Three.js Multiplayer Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #000;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      cursor: crosshair;
+    }
+
+    #ui {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      pointer-events: none;
+    }
+
+    #score {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4ecdc4;
+      margin-bottom: 10px;
+    }
+
+    #health {
+      font-size: 18px;
+      color: #ff6b6b;
+      margin-bottom: 10px;
+    }
+
+    #players {
+      font-size: 16px;
+      color: #f9ca24;
+    }
+
+    #mapInfo {
+      font-size: 14px;
+      color: #9b59b6;
+      margin-top: 5px;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+    }
+
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: #fff;
+      opacity: 0.8;
+    }
+
+    #crosshair::before {
+      width: 20px;
+      height: 2px;
+      top: 9px;
+      left: 0;
+    }
+
+    #crosshair::after {
+      width: 2px;
+      height: 20px;
+      top: 0;
+      left: 9px;
+    }
+
+    #chat {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 300px;
+      pointer-events: auto;
+    }
+
+    #chatMessages {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #333;
+      border-radius: 5px;
+      padding: 10px;
+      height: 150px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    #chatInput {
+      width: 100%;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid #333;
+      border-radius: 3px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    #chatInput:focus {
+      outline: none;
+      border-color: #4ecdc4;
+    }
+
+    #instructions {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 5px;
+      font-size: 14px;
+      max-width: 250px;
+      pointer-events: none;
+    }
+
+    #instructions h3 {
+      color: #4ecdc4;
+      margin-bottom: 10px;
+    }
+
+    #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: #4ecdc4;
+      z-index: 1000;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .chat-message {
+      margin-bottom: 5px;
+      word-wrap: break-word;
+    }
+
+    .chat-player {
+      color: #4ecdc4;
+      font-weight: bold;
+    }
+
+    /* Settings Panel Styles */
+    #settingsButton {
+      position: absolute;
+      top: 20px;
+      right: 280px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #4ecdc4;
+      border: 1px solid #4ecdc4;
+      border-radius: 5px;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 20px;
+      pointer-events: auto;
+      transition: background-color 0.3s;
+    }
+
+    #settingsButton:hover {
+      background: rgba(78, 205, 196, 0.2);
+    }
+
+    #settingsPanel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      border: 2px solid #4ecdc4;
+      border-radius: 10px;
+      padding: 20px;
+      width: 400px;
+      max-height: 70vh;
+      overflow-y: auto;
+      pointer-events: auto;
+      z-index: 1000;
+    }
+
+    #settingsContent h2 {
+      color: #4ecdc4;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    #settingsContent h3 {
+      color: #f9ca24;
+      margin: 15px 0 10px 0;
+      font-size: 16px;
+    }
+
+    #currentMapDisplay {
+      background: rgba(78, 205, 196, 0.1);
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+    #currentMapName {
+      color: #4ecdc4;
+      font-weight: bold;
+    }
+
+    #mapListActions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 10px;
+    }
+
+    #refreshMaps {
+      padding: 5px 10px;
+      border: 1px solid #f9ca24;
+      background: rgba(249, 202, 36, 0.1);
+      color: #f9ca24;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background-color 0.3s;
+    }
+
+    #refreshMaps:hover {
+      background: rgba(249, 202, 36, 0.3);
+    }
+
+    #mapList {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #333;
+      border-radius: 5px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .map-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .map-item:hover {
+      background: rgba(78, 205, 196, 0.2);
+    }
+
+    .map-item.active {
+      background: rgba(78, 205, 196, 0.3);
+      border: 1px solid #4ecdc4;
+    }
+
+    .map-name {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .map-size {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .setting-item {
+      margin: 10px 0;
+    }
+
+    .setting-item label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .setting-item input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2);
+    }
+
+    #settingsActions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    #settingsActions button {
+      padding: 8px 16px;
+      border: 1px solid #4ecdc4;
+      background: rgba(78, 205, 196, 0.1);
+      color: #4ecdc4;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #settingsActions button:hover {
+      background: rgba(78, 205, 196, 0.3);
+    }
+
+    #clearCurrentMap {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+    }
+
+    #clearCurrentMap:hover {
+      background: rgba(255, 107, 107, 0.3);
+    }
+
+    .loading {
+      text-align: center;
+      color: #999;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Loading Game...</div>
+  
+  <canvas id="gameCanvas"></canvas>
+  
+  <div id="ui">
+    <div id="hud">
+      <div id="score">Score: 0</div>
+      <div id="health">Health: 100</div>
+      <div id="players">Players: 1</div>
+      <div id="mapInfo">Map: Default</div>
+    </div>
+    
+    <div id="crosshair"></div>
+    
+    <div id="chat">
+      <div id="chatMessages"></div>
+      <input type="text" id="chatInput" placeholder="Press Enter to chat..." />
+    </div>
+    
+    <div id="instructions">
+      <h3>Controls:</h3>
+      <p>W/A/S/D - Move</p>
+      <p>Mouse - Look around</p>
+      <p>Space - Jump</p>
+      <p>Click - Shoot</p>
+      <p>Enter - Chat</p>
+      <p>ESC - Release mouse</p>
+      <p>Tab - Settings</p>
+    </div>
+
+    <div id="settingsButton">⚙️</div>
+    
+    <div id="settingsPanel" class="hidden">
+      <div id="settingsContent">
+        <h2>Game Settings</h2>
+        
+        <div id="mapSection">
+          <h3>🗺️ Map Selection</h3>
+          <div id="currentMapDisplay">
+            <span>Current: </span>
+            <span id="currentMapName">Default</span>
+          </div>
+          <div id="mapListContainer">
+            <div id="mapListActions">
+              <button id="refreshMaps">🔄 Refresh Maps</button>
+            </div>
+            <div id="mapList">
+              <div class="loading">Loading maps...</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="gameSection">
+          <h3>🎮 Game Options</h3>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="showCollisionMeshes"> Show Collision Meshes
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="showSpawnPoints"> Show Spawn Points
+            </label>
+          </div>
+        </div>
+
+        <div id="settingsActions">
+          <button id="closeSettings">Close</button>
+          <button id="clearCurrentMap">Clear Map</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html> 

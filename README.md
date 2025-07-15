@@ -1,15 +1,16 @@
-# Web Game Gauntlet - 3D Multiplayer Game
+# Three.js Multiplayer Game - Game Week Project
 
-A real-time 3D multiplayer web game built with Three.js and Socket.io. Players can join together in a shared 3D environment, collect items, and compete in various game modes.
+A real-time 3D multiplayer web game built with Three.js and Socket.io. Players can join together in a shared 3D environment, explore custom maps, collect items, and compete in various game modes.
 
 ## 🎮 Features
 
-- **Real-time 3D Multiplayer**: Up to 8 players per room
+- **Real-time 3D Multiplayer**: Multiple players in shared 3D space
 - **First-Person Controls**: WASD movement + mouse look with pointer lock
-- **Collectible System**: Gather golden items to increase your score
-- **Room System**: Create and join private or public game rooms
-- **Live Chat**: Communicate with other players (feature ready)
-- **Responsive UI**: Modern web interface with real-time updates
+- **Custom Map Loading**: Import GLB/GLTF 3D models as playable maps
+- **Collectible System**: Gather items to increase your score
+- **Physics System**: Gravity, jumping, and collision detection
+- **Live Chat**: Communicate with other players in real-time
+- **Dynamic Lighting**: Atmospheric lighting with shadows
 - **Cross-Platform**: Works on desktop and mobile browsers
 
 ## 🚀 Quick Start
@@ -37,8 +38,9 @@ A real-time 3D multiplayer web game built with Three.js and Socket.io. Players c
    ```
 
 4. **Open your browser**
-   - Navigate to `http://localhost:3003`
-   - The game runs in offline mode (no multiplayer needed)
+   - Navigate to `http://localhost:3000`
+   - Click anywhere to enable mouse controls
+   - Multiple players can join the same game
 
 ### Production Build
 
@@ -50,38 +52,52 @@ npm start
 ## 🎯 How to Play
 
 1. **Join the Game**: Open the game in your browser
-2. **Get Control**: Click anywhere to enable mouse look controls
-3. **Move**: Use WASD keys to move around
+2. **Enable Controls**: Click anywhere to enable mouse look controls
+3. **Move**: Use WASD keys to move around the 3D world
 4. **Look**: Move your mouse to look around (first-person view)
-5. **Jump**: Press Spacebar to jump
+5. **Jump**: Press Spacebar to jump over obstacles
 6. **Collect**: Walk into golden collectibles to increase your score
-7. **Compete**: See other players in real-time and compete for the highest score
+7. **Chat**: Press Enter to chat with other players
+8. **Compete**: See other players in real-time and compete for the highest score
+
+## 🗺️ Custom Map System
+
+### Supported 3D Formats
+- **GLB** (Binary GLTF) - Recommended for best performance
+- **GLTF** - JSON format with external assets
+- **OBJ** - Basic geometry support
+
+### Loading Custom Maps
+
+1. **Place your 3D model files** in the `public/maps/` directory
+2. **Supported filenames**: `map.glb`, `level.glb`, `scene.glb`, or any `.glb` file
+3. **The game will automatically detect and load** your custom maps
+4. **Maps are converted** into playable environments with:
+   - Collision detection
+   - Spawn points
+   - Lighting optimization
+   - Performance optimization
+
+### Map Requirements
+- **Scale**: Recommended size 100-500 units
+- **Optimization**: Keep polygon count under 100k for best performance
+- **Textures**: Include textures in GLB file or use GLTF with external assets
+- **Lighting**: Baked lighting preferred for better performance
 
 ## 🏗️ Project Structure
 
 ```
 WebGameGauntlet/
-├── src/
-│   ├── client/                 # Frontend (Three.js)
-│   │   ├── game/
-│   │   │   ├── Game.js         # Main game controller
-│   │   │   ├── Player.js       # Player controls and rendering
-│   │   │   ├── Environment.js  # 3D world and objects
-│   │   │   └── NetworkManager.js # Socket.io client
-│   │   ├── index.html          # Main HTML file
-│   │   └── main.js            # Entry point
-│   └── server/                 # Backend (Node.js + Socket.io)
-│       ├── game/
-│       │   └── GameManager.js  # Server-side game logic
-│       ├── rooms/
-│       │   └── RoomManager.js  # Room management
-│       └── server.js          # Express + Socket.io server
-├── assets/                    # Game assets (sprites, audio, etc.)
-├── public/                    # Static files
-├── dist/                      # Production build
-├── package.json
+├── client/                     # Frontend (Three.js)
+│   ├── index.html             # Main HTML file
+│   └── main.js                # Game client with Three.js
+├── server/                    # Backend (Node.js + Socket.io)
+│   └── index.js               # Express + Socket.io server
+├── public/                    # Static assets
+│   └── maps/                  # 3D map files (GLB/GLTF)
+├── package.json               # Dependencies and scripts
 ├── vite.config.js            # Vite configuration
-└── README.md
+└── README.md                 # This file
 ```
 
 ## 🛠️ Technology Stack
@@ -96,7 +112,6 @@ WebGameGauntlet/
 - **Node.js** - Server runtime
 - **Express** - Web framework
 - **Socket.io** - Real-time websocket communication
-- **UUID** - Unique ID generation
 
 ## 🎨 Game Features
 
@@ -104,26 +119,40 @@ WebGameGauntlet/
 - First-person 3D movement with physics
 - Smooth mouse look controls
 - Jump mechanics with gravity
-- Collision detection
-- Health system (extendable)
+- Collision detection with environment
+- Health and score tracking
 
 ### Multiplayer
 - Real-time position synchronization
 - Player spawn management
-- Room-based gameplay
 - Automatic cleanup of inactive players
+- Chat system
+- Player identification with colors
 
-### Game World
-- 3D environment with obstacles and platforms
+### 3D Environment
+- Dynamic lighting with shadows
+- Atmospheric fog and effects
+- Collision detection with all objects
 - Collectible items with animations
-- Boundary walls and collision systems
-- Dynamic lighting and shadows
+- Custom map support
+
+### Map Loading System
+- Automatic GLB/GLTF file detection
+- Model optimization for gameplay
+- Collision mesh generation
+- Lighting setup for imported models
+- Performance optimization
 
 ## 🚧 API Endpoints
 
-- `GET /api/health` - Server health check
-- `GET /api/stats` - Game statistics
+- `GET /health` - Server health check
 - `GET /` - Serve game client
+- **Socket.io Events:**
+  - `gameState` - Initial game state
+  - `playerUpdate` - Player position updates
+  - `playerJoined` - New player joined
+  - `playerLeft` - Player disconnected
+  - `chatMessage` - Chat messages
 
 ## 🔧 Development
 
@@ -138,10 +167,18 @@ WebGameGauntlet/
 
 ### Development Workflow
 
-1. **Client Development**: Edit files in `src/client/`
-2. **Server Development**: Edit files in `src/server/`
-3. **Assets**: Add game assets to `assets/` folder
+1. **Client Development**: Edit files in `client/`
+2. **Server Development**: Edit files in `server/`
+3. **3D Models**: Add GLB/GLTF files to `public/maps/`
 4. **Testing**: Open multiple browser tabs for multiplayer testing
+
+### Adding Custom Maps
+
+1. **Create or download** a 3D model in GLB format
+2. **Name it** `map.glb`, `level.glb`, or similar
+3. **Place it** in the `public/maps/` directory
+4. **Restart the server** - the map will be automatically loaded
+5. **Test in browser** - the map should render with collision detection
 
 ## 🎮 Controls
 
@@ -154,32 +191,49 @@ WebGameGauntlet/
 | Space | Jump |
 | Mouse | Look Around |
 | Click | Enable Mouse Look |
+| Enter | Chat |
 | ESC | Release Mouse Look |
 
-## 🔮 Future Enhancements
+## 🔮 Game Development Features
 
-- [ ] Sound effects and background music
-- [ ] Power-ups and special items
-- [ ] Different game modes (races, battles, etc.)
-- [ ] Player customization and avatars
-- [ ] Leaderboards and statistics
-- [ ] Mobile touch controls
-- [ ] Voice chat integration
-- [ ] Map editor
-- [ ] Tournament system
+### Implemented
+- ✅ 3D multiplayer environment
+- ✅ Real-time player synchronization
+- ✅ Physics-based movement
+- ✅ Collectible system
+- ✅ Chat system
+- ✅ Custom map loading
+- ✅ Performance optimization
+
+### In Development
+- 🔄 Advanced collision detection
+- 🔄 Combat system
+- 🔄 Power-ups and abilities
+- 🔄 Level progression
+- 🔄 Mobile controls
+- 🔄 Audio system
+
+### Planned Features
+- 📋 Tournament system
+- 📋 Player customization
+- 📋 Voice chat
+- 📋 Map editor
+- 📋 Different game modes
+- 📋 Leaderboards
 
 ## 🐛 Known Issues
 
-- Server needs to be running for the game to work
+- Map loading performance depends on model complexity
 - Mobile controls need optimization
 - Some browsers may have WebGL compatibility issues
+- Large GLB files may cause initial loading delays
 
 ## 📝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Test thoroughly with multiple players
 5. Submit a pull request
 
 ## 📄 License
@@ -188,10 +242,24 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- Three.js community for excellent documentation
-- Socket.io team for real-time communication tools
-- Game asset creators for sprites and audio files
+- Three.js community for excellent 3D web graphics
+- Socket.io team for real-time communication
+- GLTF/GLB format creators for efficient 3D model storage
+- Game development community for inspiration
+
+## 🎯 Game Week Project Notes
+
+This project demonstrates:
+- **Rapid technology adoption** using Three.js from scratch
+- **AI-assisted development** for faster learning and implementation
+- **Real-time multiplayer** with Socket.io
+- **3D graphics programming** with modern web technologies
+- **Performance optimization** for smooth gameplay
+
+**Development Timeline**: 7 days from zero Three.js knowledge to functional multiplayer game
+**AI Tools Used**: ChatGPT, Cursor AI, and GitHub Copilot for accelerated learning
+**Key Learning**: 3D mathematics, WebGL, multiplayer networking, and game physics
 
 ---
 
-**Happy Gaming! 🎮** 
+**Ready to play! 🎮** Open `http://localhost:3000` in your browser after running `npm run dev` 

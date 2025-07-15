@@ -1,35 +1,28 @@
 {
-  "name": "web-game-gauntlet",
+  "name": "threejs-multiplayer-game",
   "version": "1.0.0",
-  "description": "3D Web Game with Three.js and Socket.io Multiplayer",
-  "main": "src/server/server.js",
+  "description": "A real-time multiplayer 3D game built with Three.js and Socket.io",
+  "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
-    "server:dev": "nodemon src/server/server.js",
+    "server:dev": "nodemon server/index.js",
     "client:dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node src/server/server.js"
+    "start": "node server/index.js"
   },
-  "keywords": [
-    "threejs",
-    "socketio",
-    "multiplayer",
-    "3d",
-    "web-game"
-  ],
-  "author": "WebGameGauntlet",
+  "keywords": ["threejs", "game", "multiplayer", "3d", "socket.io"],
+  "author": "",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.7.2",
-    "socket.io-client": "^4.8.1",
-    "three": "^0.155.0",
-    "uuid": "^9.0.0"
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
+    "three": "^0.158.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.0",
-    "nodemon": "^3.0.1",
-    "vite": "^4.4.9"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
+    "vite": "^5.0.0"
   }
-}
+} 
