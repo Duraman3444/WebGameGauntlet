@@ -22,6 +22,11 @@ class MultiplayerGame {
     this.availableMaps = [];
     this.isSettingsOpen = false;
     
+    // Default environment tracking
+    this.defaultEnvironment = [];
+    this.defaultGround = null;
+    this.isDefaultEnvironmentActive = true;
+    
     // Movement
     this.velocity = new THREE.Vector3();
     this.direction = new THREE.Vector3();
@@ -136,7 +141,10 @@ class MultiplayerGame {
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
+    ground.userData = { isDefaultEnvironment: true };
     this.scene.add(ground);
+    this.defaultGround = ground;
+    this.defaultEnvironment.push(ground);
 
     // Create some platforms and obstacles
     this.createPlatforms();
@@ -154,7 +162,8 @@ class MultiplayerGame {
       const availableMaps = await this.mapLoader.loadAvailableMaps();
       
       if (availableMaps.length > 0) {
-        // Load the first available map
+        // Hide default environment and load the first available map
+        this.hideDefaultEnvironment();
         const firstMap = availableMaps[0];
         await this.mapLoader.loadMap(firstMap.path, firstMap.name);
         console.log(`🎮 Loaded initial map: ${firstMap.name}`);
@@ -163,10 +172,13 @@ class MultiplayerGame {
         this.updateMapInfo();
       } else {
         console.log('📂 No custom maps found, using default environment');
+        // Default environment is already active
       }
     } catch (error) {
       console.error('⚠️ Failed to load initial map:', error);
       console.log('🎮 Continuing with default environment');
+      // Make sure default environment is shown if map loading fails
+      this.showDefaultEnvironment();
     }
   }
 
@@ -188,7 +200,9 @@ class MultiplayerGame {
       platform.position.set(pos.x, pos.y, pos.z);
       platform.castShadow = true;
       platform.receiveShadow = true;
+      platform.userData = { isDefaultEnvironment: true };
       this.scene.add(platform);
+      this.defaultEnvironment.push(platform);
       this.gameObjects.push(platform);
     });
 
@@ -205,7 +219,9 @@ class MultiplayerGame {
       wall.position.y = 5;
       wall.castShadow = true;
       wall.receiveShadow = true;
+      wall.userData = { isDefaultEnvironment: true };
       this.scene.add(wall);
+      this.defaultEnvironment.push(wall);
       this.gameObjects.push(wall);
     }
   }
@@ -227,8 +243,13 @@ class MultiplayerGame {
         (Math.random() - 0.5) * 120
       );
       collectible.castShadow = true;
-      collectible.userData = { type: 'collectible', collected: false };
+      collectible.userData = { 
+        type: 'collectible', 
+        collected: false, 
+        isDefaultEnvironment: true 
+      };
       this.scene.add(collectible);
+      this.defaultEnvironment.push(collectible);
       this.gameObjects.push(collectible);
     }
   }
@@ -395,7 +416,7 @@ class MultiplayerGame {
 
       // Add default map option
       const defaultMapHTML = `
-        <div class="map-item ${!this.mapLoader.currentMap ? 'active' : ''}" data-map="default">
+        <div class="map-item ${this.isDefaultEnvironmentActive ? 'active' : ''}" data-map="default">
           <div>
             <div class="map-name">🏞️ Default Environment</div>
             <div class="map-size">Built-in</div>
@@ -465,6 +486,22 @@ class MultiplayerGame {
     }
   }
 
+  hideDefaultEnvironment() {
+    this.defaultEnvironment.forEach(obj => {
+      obj.visible = false;
+    });
+    this.isDefaultEnvironmentActive = false;
+    console.log('🏞️ Default environment hidden');
+  }
+
+  showDefaultEnvironment() {
+    this.defaultEnvironment.forEach(obj => {
+      obj.visible = true;
+    });
+    this.isDefaultEnvironmentActive = true;
+    console.log('🏞️ Default environment shown');
+  }
+
   async switchMap(mapName, mapPath) {
     try {
       // Show loading state
@@ -475,12 +512,14 @@ class MultiplayerGame {
       }
 
       if (mapName === 'default') {
-        // Clear current map and use default environment
+        // Clear current map and show default environment
         this.mapLoader.clearCurrentMap();
+        this.showDefaultEnvironment();
         this.updateMapInfo();
         console.log('🏞️ Switched to default environment');
       } else {
-        // Load the selected map
+        // Hide default environment and load the selected map
+        this.hideDefaultEnvironment();
         await this.mapLoader.loadMap(mapPath, mapName);
         this.updateMapInfo();
         console.log(`🗺️ Switched to map: ${mapName}`);
@@ -494,6 +533,8 @@ class MultiplayerGame {
 
     } catch (error) {
       console.error('Failed to switch map:', error);
+      // If map loading fails, show default environment
+      this.showDefaultEnvironment();
       alert(`Failed to load map: ${mapName}`);
     }
   }
@@ -501,6 +542,7 @@ class MultiplayerGame {
   clearCurrentMap() {
     if (this.mapLoader && this.mapLoader.currentMap) {
       this.mapLoader.clearCurrentMap();
+      this.showDefaultEnvironment();
       this.updateMapInfo();
       
       // Update UI if settings panel is open
@@ -800,11 +842,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMap: async (mapPath, mapName) => {
       if (game.mapLoader) {
         try {
+          game.hideDefaultEnvironment();
           await game.mapLoader.loadMap(mapPath, mapName);
           game.updateMapInfo();
           console.log(`✅ Map loaded: ${mapName}`);
         } catch (error) {
           console.error(`❌ Failed to load map: ${error.message}`);
+          game.showDefaultEnvironment();
         }
       }
     },
@@ -829,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearMap: () => {
       if (game.mapLoader) {
         game.mapLoader.clearCurrentMap();
+        game.showDefaultEnvironment();
         game.updateMapInfo();
         console.log('🗑️ Map cleared');
       }
@@ -838,11 +883,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMapFromUrl: async (url, name) => {
       if (game.mapLoader) {
         try {
+          game.hideDefaultEnvironment();
           await game.mapLoader.loadMap(url, name);
           game.updateMapInfo();
           console.log(`✅ Map loaded from URL: ${name}`);
         } catch (error) {
           console.error(`❌ Failed to load map from URL: ${error.message}`);
+          game.showDefaultEnvironment();
         }
       }
     }
