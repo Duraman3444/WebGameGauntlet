@@ -113,6 +113,7 @@ class MultiplayerGame {
     // Keyboard navigation for menus
     this.characterMenuSelectedIndex = 0;
     this.weaponMenuSelectedIndex = 0;
+    this.mapMenuSelectedIndex = 0;
     this.menuKeyboardHandler = null;
     
     // Character scaling based on map size
@@ -1011,11 +1012,18 @@ class MultiplayerGame {
     
     // Load available maps
     await this.loadAvailableMapsToUI();
+    
+    // Setup keyboard navigation for map settings
+    this.setupMapSettingsKeyboardNavigation();
+    this.updateMapSelection();
   }
 
   closeSettings() {
     this.isSettingsOpen = false;
     document.getElementById('settingsPanel').classList.add('hidden');
+    
+    // Remove keyboard navigation
+    this.removeMenuKeyboardNavigation();
   }
 
   async loadAvailableMapsToUI() {
@@ -1064,11 +1072,17 @@ class MultiplayerGame {
 
       // Add click handlers for map items
       const mapItems = mapListElement.querySelectorAll('.map-item');
-      mapItems.forEach(item => {
+      mapItems.forEach((item, index) => {
         item.addEventListener('click', () => {
           const mapName = item.dataset.map;
           const mapPath = item.dataset.path || mapName;
           this.switchMap(mapName, mapPath);
+        });
+        
+        // Add mouse hover support for keyboard navigation
+        item.addEventListener('mouseenter', () => {
+          this.mapMenuSelectedIndex = index;
+          this.updateMapSelection();
         });
       });
 
@@ -1874,6 +1888,58 @@ class MultiplayerGame {
     if (menuItems[index]) {
       menuItems[index].click();
     }
+  }
+
+  // Map Settings Keyboard Navigation
+  setupMapSettingsKeyboardNavigation() {
+    this.removeMenuKeyboardNavigation();
+    
+    this.menuKeyboardHandler = (event) => {
+      if (!this.isSettingsOpen) return;
+      
+      const mapItems = document.querySelectorAll('#mapList .map-item');
+      
+      switch(event.code) {
+        case 'ArrowUp':
+          event.preventDefault();
+          this.mapMenuSelectedIndex = Math.max(0, this.mapMenuSelectedIndex - 1);
+          this.updateMapSelection();
+          break;
+          
+        case 'ArrowDown':
+          event.preventDefault();
+          this.mapMenuSelectedIndex = Math.min(mapItems.length - 1, this.mapMenuSelectedIndex + 1);
+          this.updateMapSelection();
+          break;
+          
+        case 'Enter':
+          event.preventDefault();
+          if (mapItems[this.mapMenuSelectedIndex]) {
+            mapItems[this.mapMenuSelectedIndex].click();
+          }
+          break;
+          
+        case 'Escape':
+          event.preventDefault();
+          this.closeSettings();
+          break;
+      }
+    };
+    
+    document.addEventListener('keydown', this.menuKeyboardHandler);
+  }
+
+  updateMapSelection() {
+    const mapItems = document.querySelectorAll('#mapList .map-item');
+    
+    mapItems.forEach((item, index) => {
+      if (index === this.mapMenuSelectedIndex) {
+        item.classList.add('selected');
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        item.classList.remove('selected');
+      }
+    });
   }
 
   async selectCharacter(characterId) {
