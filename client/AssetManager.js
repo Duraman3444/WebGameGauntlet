@@ -4,7 +4,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export class AssetManager {
   constructor() {
     this.loader = new GLTFLoader();
-    this.textureLoader = new THREE.TextureLoader();
     this.loadedAssets = new Map();
     this.loadingPromises = new Map();
     this.animationMixers = new Map();
@@ -42,44 +41,25 @@ export class AssetManager {
           model: '/assets/weapons/assault_rifle.glb',
           name: 'Assault Rifle',
           color: 0x424242,
-          stats: { damage: 25, fireRate: 600, ammo: 30, range: 100 },
-          textures: {
-            base: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_d_15.png',
-            normal: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_n_14.png',
-            magazine: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/magazine_d_25.png',
-            stock: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/stock_d_1.png'
-          }
+          stats: { damage: 25, fireRate: 600, ammo: 30, range: 100 }
         },
         sniper_rifle: {
           model: '/assets/weapons/sniper_rifle.glb',
           name: 'Sniper Rifle',
           color: 0x1976d2,
-          stats: { damage: 80, fireRate: 60, ammo: 10, range: 300 },
-          textures: {
-            base: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_d_15.png',
-            normal: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_n_14.png'
-          }
+          stats: { damage: 80, fireRate: 60, ammo: 10, range: 300 }
         },
         shotgun: {
           model: '/assets/weapons/shotgun.glb',
           name: 'Shotgun',
           color: 0x8d6e63,
-          stats: { damage: 60, fireRate: 100, ammo: 8, range: 50 },
-          textures: {
-            base: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_d_15.png',
-            normal: '/assets/textures/tactical-m4-tan-codmw2022-pbr/textures/body_n_14.png'
-          }
+          stats: { damage: 60, fireRate: 100, ammo: 8, range: 50 }
         },
         pistol: {
           model: '/assets/weapons/pistol.glb',
           name: 'Pistol',
           color: 0x455a64,
-          stats: { damage: 20, fireRate: 300, ammo: 15, range: 75 },
-          textures: {
-            base: '/assets/textures/9mm-daemon-pistol-free-3d-model/textures/wpn_p55_pi_mike2011_frame_v0_c&wpn_p55_pi_mike2011_frame_v0_.png',
-            grip: '/assets/textures/9mm-daemon-pistol-free-3d-model/textures/wpn_p55_pi_mike2011_griptac_v0_c&wpn_p55_pi_mike2011_griptac.png',
-            magazine: '/assets/textures/9mm-daemon-pistol-free-3d-model/textures/wpn_p55_pi_mike2011_mag_v0_c&wpn_p55_pi_mike2011_mag_v0_s~12.png'
-          }
+          stats: { damage: 20, fireRate: 300, ammo: 15, range: 75 }
         }
       },
       animations: {
@@ -187,11 +167,6 @@ export class AssetManager {
     const gltf = await this.loadAsset(weapon.model, fallbackGeometry, fallbackMaterial);
     const weaponMesh = gltf.scene.clone();
     
-    // Apply weapon textures if available
-    if (weapon.textures && !gltf.userData.isFallback) {
-      await this.applyWeaponTextures(weaponMesh, weapon.textures);
-    }
-    
     // Add weapon stats to userData
     weaponMesh.userData = {
       ...weaponMesh.userData,
@@ -202,100 +177,6 @@ export class AssetManager {
     };
     
     return weaponMesh;
-  }
-
-  async applyWeaponTextures(weaponMesh, textureConfig) {
-    try {
-      console.log(`🎨 Loading textures for weapon...`);
-      
-      // Load base texture
-      if (textureConfig.base) {
-        const baseTexture = await this.loadTexture(textureConfig.base);
-        
-        // Apply texture to all meshes in the weapon
-        weaponMesh.traverse((child) => {
-          if (child.isMesh) {
-            // Create a new material with the texture
-            const material = new THREE.MeshStandardMaterial({
-              map: baseTexture,
-              metalness: 0.8,
-              roughness: 0.4
-            });
-            
-            // If normal map is available, apply it
-            if (textureConfig.normal) {
-              this.loadTexture(textureConfig.normal).then(normalTexture => {
-                material.normalMap = normalTexture;
-                material.needsUpdate = true;
-              }).catch(err => {
-                console.warn('Failed to load normal map:', err);
-              });
-            }
-            
-            child.material = material;
-          }
-        });
-        
-        console.log(`✅ Applied base texture to weapon`);
-      }
-      
-      // Load additional textures for specific parts if needed
-      if (textureConfig.magazine) {
-        const magazineTexture = await this.loadTexture(textureConfig.magazine);
-        // Apply to magazine-specific meshes if they can be identified
-        weaponMesh.traverse((child) => {
-          if (child.isMesh && child.name && child.name.toLowerCase().includes('magazine')) {
-            const material = new THREE.MeshStandardMaterial({
-              map: magazineTexture,
-              metalness: 0.6,
-              roughness: 0.5
-            });
-            child.material = material;
-          }
-        });
-      }
-      
-      if (textureConfig.grip) {
-        const gripTexture = await this.loadTexture(textureConfig.grip);
-        weaponMesh.traverse((child) => {
-          if (child.isMesh && child.name && child.name.toLowerCase().includes('grip')) {
-            const material = new THREE.MeshStandardMaterial({
-              map: gripTexture,
-              metalness: 0.3,
-              roughness: 0.7
-            });
-            child.material = material;
-          }
-        });
-      }
-      
-    } catch (error) {
-      console.warn('Failed to apply weapon textures:', error);
-    }
-  }
-
-  async loadTexture(texturePath) {
-    return new Promise((resolve, reject) => {
-      this.textureLoader.load(
-        texturePath,
-        (texture) => {
-          // Configure texture settings
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.generateMipmaps = true;
-          texture.minFilter = THREE.LinearMipmapLinearFilter;
-          texture.magFilter = THREE.LinearFilter;
-          resolve(texture);
-        },
-        (progress) => {
-          console.log(`Loading texture ${texturePath}: ${(progress.loaded / progress.total * 100).toFixed(1)}%`);
-        },
-        (error) => {
-          console.warn(`Failed to load texture ${texturePath}:`, error);
-          reject(error);
-        }
-      );
-    });
   }
 
   async loadAnimation(animationId) {

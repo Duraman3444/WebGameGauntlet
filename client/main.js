@@ -248,10 +248,6 @@ class MultiplayerGame {
       this.player.position.set(0, 1, 0);
       this.player.castShadow = true;
       this.player.receiveShadow = true;
-      
-      // Apply appropriate character scaling based on current map
-      this.scaleCharacterForCurrentMap();
-      
       this.scene.add(this.player);
 
       // Load weapon model and attach to player
@@ -280,49 +276,8 @@ class MultiplayerGame {
       this.player.position.set(0, 1, 0);
       this.player.castShadow = true;
       this.player.receiveShadow = true;
-      this.scaleCharacterForCurrentMap();
       this.scene.add(this.player);
     }
-  }
-
-  // Scale character appropriately based on current map
-  scaleCharacterForCurrentMap() {
-    if (!this.player) return;
-    
-    // Character scale factors based on map size
-    const characterScaleFactors = {
-      // Large maps need smaller characters
-      'free_fire_burmuda_map_the_circuit_3d_model': 0.15,
-      'free_fire_lone_wolf_mode_3d_model': 0.15,
-      'free_fire_new_peak_3d_model': 0.15,
-      'crash__lowpoly_cod_map': 0.2,
-      'countryside_scene_free': 0.15,
-      
-      // Medium maps
-      'dust2': 0.3,
-      'de_dust2_-_cs_map': 0.3,
-      'de_dust2': 0.3,
-      'cs_dust2': 0.3,
-      'map': 0.25,
-      'test': 0.25,
-      
-      // Smaller maps need larger characters
-      'nuketown': 0.4,
-      'clock_tower_3d_model_for_prisma_3d': 0.35,
-      
-      // Default environment
-      'default': 1.0
-    };
-    
-    let currentMapName = 'default';
-    if (this.mapLoader && this.mapLoader.mapName) {
-      currentMapName = this.mapLoader.mapName;
-    }
-    
-    const scaleFactor = characterScaleFactors[currentMapName] || 0.25;
-    this.player.scale.setScalar(scaleFactor);
-    
-    console.log(`🎭 Character scaled by ${scaleFactor} for map: ${currentMapName}`);
   }
 
   setupEnvironment() {
@@ -356,9 +311,6 @@ class MultiplayerGame {
         const firstMap = availableMaps[0];
         const mapResult = await this.mapLoader.loadMap(firstMap.path, firstMap.name);
         
-        // Rescale character for the loaded map
-        this.scaleCharacterForCurrentMap();
-        
         // Position player at the spawn point inside the map
         if (mapResult.spawnPoint) {
           this.player.position.copy(mapResult.spawnPoint);
@@ -390,7 +342,6 @@ class MultiplayerGame {
       // Make sure default environment is shown if map loading fails
       this.showDefaultEnvironment();
       this.player.position.set(0, 1, 0);
-      this.scaleCharacterForCurrentMap();
     }
   }
 
@@ -1162,17 +1113,12 @@ class MultiplayerGame {
         this.showDefaultEnvironment();
         // Reset player position to default
         this.player.position.set(0, 1, 0);
-        // Rescale character for default environment
-        this.scaleCharacterForCurrentMap();
         this.updateMapInfo();
         console.log('🏞️ Switched to default environment');
       } else {
         // Hide default environment and load the selected map
         this.hideDefaultEnvironment();
         const mapResult = await this.mapLoader.loadMap(mapPath, mapName);
-        
-        // Rescale character for the new map
-        this.scaleCharacterForCurrentMap();
         
         // Position player at the spawn point inside the map
         if (mapResult.spawnPoint) {
@@ -1199,7 +1145,6 @@ class MultiplayerGame {
       // If map loading fails, show default environment
       this.showDefaultEnvironment();
       this.player.position.set(0, 1, 0);
-      this.scaleCharacterForCurrentMap();
       alert(`Failed to load map: ${mapName}`);
     }
   }
@@ -1778,10 +1723,6 @@ class MultiplayerGame {
     try {
       console.log(`🎮 Selecting character: ${characterId}`);
       
-      // Store current position and weapon
-      const currentPosition = this.player ? this.player.position.clone() : new THREE.Vector3(0, 1, 0);
-      const currentWeapon = this.playerWeapon;
-      
       // Remove current player from scene
       if (this.player) {
         this.scene.remove(this.player);
@@ -1792,21 +1733,16 @@ class MultiplayerGame {
       
       // Load new character
       this.player = await this.assetManager.loadCharacter(characterId);
-      this.player.position.copy(currentPosition);
+      this.player.position.set(0, 1, 0);
       this.player.castShadow = true;
       this.player.receiveShadow = true;
-      
-      // Apply appropriate scaling for current map
-      this.scaleCharacterForCurrentMap();
-      
       this.scene.add(this.player);
       
       // Update weapon attachment
-      if (currentWeapon) {
-        this.player.add(currentWeapon);
-        currentWeapon.position.set(0.5, 0.3, 0.5);
-        currentWeapon.rotation.y = Math.PI / 4;
-        this.playerWeapon = currentWeapon;
+      if (this.playerWeapon) {
+        this.player.add(this.playerWeapon);
+        this.playerWeapon.position.set(0.5, 0.3, 0.5);
+        this.playerWeapon.rotation.y = Math.PI / 4;
       }
       
       // Update UI
@@ -1828,14 +1764,12 @@ class MultiplayerGame {
       // Remove current weapon from player
       if (this.playerWeapon) {
         this.player.remove(this.playerWeapon);
-        console.log(`🗑️ Removed old weapon from player`);
       }
       
       // Update current weapon
       this.currentWeapon = weaponId;
       
       // Load new weapon
-      console.log(`📦 Loading weapon model: ${weaponId}`);
       this.playerWeapon = await this.assetManager.loadWeapon(weaponId);
       this.playerWeapon.position.set(0.5, 0.3, 0.5);
       this.playerWeapon.rotation.y = Math.PI / 4;
@@ -1844,7 +1778,6 @@ class MultiplayerGame {
       // Attach to player
       if (this.player) {
         this.player.add(this.playerWeapon);
-        console.log(`🔗 Attached weapon to player`);
       }
       
       // Update weapon stats
@@ -1852,18 +1785,9 @@ class MultiplayerGame {
       this.weapon.maxAmmo = weaponStats.ammo;
       this.weapon.damage = weaponStats.damage;
       this.weapon.fireRate = weaponStats.fireRate;
-      this.weapon.ammo = weaponStats.ammo; // Reset ammo to full
-      
-      console.log(`📊 Updated weapon stats:`, {
-        damage: this.weapon.damage,
-        fireRate: this.weapon.fireRate,
-        ammo: this.weapon.ammo,
-        maxAmmo: this.weapon.maxAmmo
-      });
       
       // Update UI
       this.updateWeaponUI();
-      this.updateWeaponInfoUI();
       
       // Close menu
       this.toggleWeaponMenu();
